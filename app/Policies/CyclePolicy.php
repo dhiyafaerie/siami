@@ -3,10 +3,10 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Nonconformities;
+use App\Models\Cycle;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class NonconformitiesPolicy
+class CyclePolicy
 {
     use HandlesAuthorization;
 
@@ -15,15 +15,15 @@ class NonconformitiesPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_nonconformities');
+        return $user->can('view_any_cycle');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Nonconformities $nonconformities): bool
+    public function view(User $user, Cycle $cycle): bool
     {
-        return $user->can('view_nonconformities');
+        return $user->can('view_cycle');
     }
 
     /**
@@ -31,23 +31,23 @@ class NonconformitiesPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_nonconformities');
+        return $user->can('create_cycle');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Nonconformities $nonconformities): bool
+    public function update(User $user, Cycle $cycle): bool
     {
-        return $user->can('update_nonconformities');
+        return $user->can('update_cycle');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Nonconformities $nonconformities): bool
+    public function delete(User $user, Cycle $cycle): bool
     {
-        return $user->can('delete_nonconformities');
+        return $user->can('delete_cycle');
     }
 
     /**
@@ -55,15 +55,15 @@ class NonconformitiesPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_nonconformities');
+        return $user->can('delete_any_cycle');
     }
 
     /**
      * Determine whether the user can permanently delete.
      */
-    public function forceDelete(User $user, Nonconformities $nonconformities): bool
+    public function forceDelete(User $user, Cycle $cycle): bool
     {
-        return $user->can('force_delete_nonconformities');
+        return $user->can('force_delete_cycle');
     }
 
     /**
@@ -71,15 +71,15 @@ class NonconformitiesPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_nonconformities');
+        return $user->can('force_delete_any_cycle');
     }
 
     /**
      * Determine whether the user can restore.
      */
-    public function restore(User $user, Nonconformities $nonconformities): bool
+    public function restore(User $user, Cycle $cycle): bool
     {
-        return $user->can('restore_nonconformities');
+        return $user->can('restore_cycle');
     }
 
     /**
@@ -87,15 +87,15 @@ class NonconformitiesPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_nonconformities');
+        return $user->can('restore_any_cycle');
     }
 
     /**
      * Determine whether the user can replicate.
      */
-    public function replicate(User $user, Nonconformities $nonconformities): bool
+    public function replicate(User $user, Cycle $cycle): bool
     {
-        return $user->can('replicate_nonconformities');
+        return $user->can('replicate_cycle');
     }
 
     /**
@@ -103,6 +103,6 @@ class NonconformitiesPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_nonconformities');
+        return $user->can('reorder_cycle');
     }
 }

@@ -13,9 +13,13 @@ return new class extends Migration
     {
         Schema::create('standards', function (Blueprint $table) {
             $table->id();
-            $table->string('standar');
-            $table->string('untuk_pilihan');
-            $table->text('isi_standar');
+            $table->string('nomor');
+            $table->text('deskriptor');
+            $table->string('keywords');
+            $table->string('standar_mutu');
+            $table->string('pernyataan_standar');
+            $table->string('iku');
+            $table->string('ikt');
             $table->foreignId('cycles_id')->constrained('cycles')->onDelete('cascade');
             $table->timestamps();
         });
