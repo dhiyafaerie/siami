@@ -14,10 +14,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // User::factory(10)->create();
-
+        $this->call([
+        RolePermissionSeeder::class,
+        // Other seeders...
+        ]);
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Ketua LPM',
+            'email' => 'lpm@gmail.com',
+            'password' => bcrypt('123456'),
         ]);
     }
 }

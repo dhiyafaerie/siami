@@ -27,6 +27,9 @@ class StandardResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\TextInput::make('nomor')
+                    ->required()
+                    ->maxLength(255),
                 TinyEditor::make('deskriptor')
                     ->required()
                     ->columnSpanFull(),
@@ -48,7 +51,6 @@ class StandardResource extends Resource
                     
                 Forms\Components\Select::make('cycles_id')
                     ->relationship('cycle', 'name')
-
                     ->preload()
                     ->searchable(),
             ]);
@@ -58,6 +60,8 @@ class StandardResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('nomor')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('deskriptor')
                     ->wrap()
                     ->html()

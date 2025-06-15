@@ -18,7 +18,7 @@ class NonconformityResource extends Resource
     protected static ?string $model = Nonconformity::class;
     protected static ?string $navigationGroup = "AMI";
 
-    protected static ?string $navigationLabel = "Ketidaksesuaian";
+    protected static ?string $navigationLabel = "KTS";
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
