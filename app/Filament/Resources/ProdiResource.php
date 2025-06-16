@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\FacultyResource\Pages;
-use App\Filament\Resources\FacultyResource\RelationManagers;
-use App\Models\Faculty;
+use App\Filament\Resources\ProdiResource\Pages;
+use App\Filament\Resources\ProdiResource\RelationManagers;
+use App\Models\Prodi;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -13,24 +13,36 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+
 use Filament\Forms\Components\TextInput;
 
-
-class FacultyResource extends Resource
+class ProdiResource extends Resource
 {
-    protected static ?string $model = Faculty::class;
-
+    protected static ?string $model = Prodi::class;
     protected static ?string $navigationGroup = "User Management";
-    
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                    // Dekan Name Field
-                    Forms\Components\TextInput::make('user.name')
-                        ->label('Dekan')
+                Forms\Components\Select::make('faculties_id')
+                    ->relationship('faculty', 'fakultas')
+                    ->preload()
+                    ->searchable(),
+                Forms\Components\TextInput::make('programstudi')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\Radio::make('jenjang')
+                    ->label('Jenjang')
+                    ->options([
+                        'sarjana' => 'Sarjana',
+                        'magister' => 'Magister'
+                    ])
+                    ->inline()
+                    ->inlineLabel(false),
+                Forms\Components\TextInput::make('user.name')
+                        ->label('Kaprodi')
                         ->required()
                         ->maxLength(255)
                         ->columnSpan(1)
@@ -39,28 +51,6 @@ class FacultyResource extends Resource
                                 $component->getRecord()?->user?->name ?? ''
                             );
                         }),
-                    
-                    Forms\Components\TextInput::make('user.email')
-                        ->label('Email')
-                        ->email()
-                        ->required()
-                        ->maxLength(255)
-                        ->columnSpan(1)
-                        ->afterStateHydrated(function (TextInput $component) {
-                            $component->state(
-                                $component->getRecord()?->user?->email ?? ''
-                            );
-                        }),
-                    
-                    // Password Field (Only for new users)
-                    Forms\Components\TextInput::make('user.password')
-                        ->label('Password')
-                        ->password()
-                        ->columnSpan(1),
-                
-                Forms\Components\TextInput::make('fakultas')
-                    ->required()
-                    ->maxLength(255),
                 Forms\Components\TextInput::make('nidn')
                     ->required()
                     ->maxLength(255),
@@ -71,6 +61,23 @@ class FacultyResource extends Resource
                     ->tel()
                     ->required()
                     ->maxLength(255),
+
+                Forms\Components\TextInput::make('user.email')
+                        ->label('Email')
+                        ->email()
+                        ->required()
+                        ->maxLength(255)
+                        ->columnSpan(1)
+                        ->afterStateHydrated(function (TextInput $component) {
+                            $component->state(
+                                $component->getRecord()?->user?->email ?? ''
+                            );
+                        }),
+                // Password Field (Only for new users)
+                    Forms\Components\TextInput::make('user.password')
+                        ->label('Password')
+                        ->password()
+                        ->columnSpan(1),
             ]);
     }
 
@@ -78,10 +85,11 @@ class FacultyResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('Nama Dekan'),
-                Tables\Columns\TextColumn::make('fakultas')
+                Tables\Columns\TextColumn::make('programstudi')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('jenjang'),
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Nama Kaprodi'),
                 Tables\Columns\TextColumn::make('nidn')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('nik_nip')
@@ -120,9 +128,9 @@ class FacultyResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListFaculties::route('/'),
-            'create' => Pages\CreateFaculty::route('/create'),
-            'edit' => Pages\EditFaculty::route('/{record}/edit'),
+            'index' => Pages\ListProdis::route('/'),
+            'create' => Pages\CreateProdi::route('/create'),
+            'edit' => Pages\EditProdi::route('/{record}/edit'),
         ];
     }
 }
