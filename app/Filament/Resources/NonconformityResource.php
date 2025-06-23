@@ -19,7 +19,7 @@ class NonconformityResource extends Resource
     protected static ?string $navigationGroup = "AMI";
 
     protected static ?string $navigationLabel = "KTS";
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-inbox-stack';
 
     public static function form(Form $form): Form
     {

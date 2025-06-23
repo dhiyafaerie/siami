@@ -14,13 +14,13 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-use Filament\Forms\Components\TextInput;
 
 class ProdiResource extends Resource
 {
     protected static ?string $model = Prodi::class;
     protected static ?string $navigationGroup = "User Management";
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationLabel = "Prodi";
+    protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
     public static function form(Form $form): Form
     {
@@ -28,10 +28,12 @@ class ProdiResource extends Resource
             ->schema([
                 Forms\Components\Select::make('faculties_id')
                     ->relationship('faculty', 'fakultas')
+                    ->label("Fakultas")
                     ->preload()
                     ->searchable(),
                 Forms\Components\TextInput::make('programstudi')
                     ->required()
+                    ->label("Prodi")
                     ->maxLength(255),
                 Forms\Components\Radio::make('jenjang')
                     ->label('Jenjang')
@@ -46,16 +48,18 @@ class ProdiResource extends Resource
                         ->required()
                         ->maxLength(255)
                         ->columnSpan(1)
-                        ->afterStateHydrated(function (TextInput $component) {
+                        ->afterStateHydrated(function (Forms\Components\TextInput $component) {
                             $component->state(
                                 $component->getRecord()?->user?->name ?? ''
                             );
                         }),
                 Forms\Components\TextInput::make('nidn')
                     ->required()
+                    ->label("NIDN")
                     ->maxLength(255),
                 Forms\Components\TextInput::make('nik_nip')
                     ->required()
+                    ->label("NIK / NIP")
                     ->maxLength(255),
                 Forms\Components\TextInput::make('telpon')
                     ->tel()
@@ -68,7 +72,7 @@ class ProdiResource extends Resource
                         ->required()
                         ->maxLength(255)
                         ->columnSpan(1)
-                        ->afterStateHydrated(function (TextInput $component) {
+                        ->afterStateHydrated(function (Forms\Components\TextInput $component) {
                             $component->state(
                                 $component->getRecord()?->user?->email ?? ''
                             );

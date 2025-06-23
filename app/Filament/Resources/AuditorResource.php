@@ -2,10 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\FacultyResource\Pages;
-use App\Filament\Resources\FacultyResource\RelationManagers;
-use App\Models\Faculty;
-use App\Models\User;
+use App\Filament\Resources\AuditorResource\Pages;
+use App\Filament\Resources\AuditorResource\RelationManagers;
+use App\Models\Auditor;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,66 +12,73 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\TextInput;
 
-
-class FacultyResource extends Resource
+class AuditorResource extends Resource
 {
-    protected static ?string $model = Faculty::class;
-
+    protected static ?string $model = Auditor::class;
     protected static ?string $navigationGroup = "User Management";
-    protected static ?string $navigationLabel = "Fakultas";
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                    // Dekan Name Field
-                    Forms\Components\TextInput::make('user.name')
-                        ->label('Dekan')
+                Forms\Components\Select::make('prodis_id')
+                ->relationship('prodi', 'programstudi')
+                ->label("Prodi")
+                ->preload()
+                ->searchable()
+                ->live()
+                ->afterStateUpdated(function ($state, Forms\Set $set, $get) {
+                    if ($state) {
+                        $prodi = \App\Models\Prodi::find($state);
+                        if ($prodi) {
+                            $set('faculties_id', $prodi->faculties_id);
+                        }
+                    }
+                }),
+
+                Forms\Components\Select::make('faculties_id')
+                    ->relationship('faculty', 'fakultas')
+                    ->label("Fakultas")
+                    ->disabled() // Make it read-only since it will be auto-set
+                    ->dehydrated(),
+                Forms\Components\TextInput::make('user.name')
+                        ->label('Nama Auditor')
                         ->required()
                         ->maxLength(255)
                         ->columnSpan(1)
-                        ->afterStateHydrated(function (TextInput $component) {
+                        ->afterStateHydrated(function (Forms\Components\TextInput $component) {
                             $component->state(
                                 $component->getRecord()?->user?->name ?? ''
                             );
                         }),
-                    
-                    Forms\Components\TextInput::make('user.email')
-                        ->label('Email')
-                        ->email()
-                        ->required()
-                        ->maxLength(255)
-                        ->columnSpan(1)
-                        ->afterStateHydrated(function (TextInput $component) {
-                            $component->state(
-                                $component->getRecord()?->user?->email ?? ''
-                            );
-                        }),
-                    
-                    // Password Field (Only for new users)
-                    Forms\Components\TextInput::make('user.password')
-                        ->label('Password')
-                        ->password()
-                        ->columnSpan(1),
-                
-                Forms\Components\TextInput::make('fakultas')
-                    ->required()
-                    ->maxLength(255),
                 Forms\Components\TextInput::make('nidn')
                     ->required()
-                    ->label("NIDN")
                     ->maxLength(255),
                 Forms\Components\TextInput::make('nik_nip')
                     ->required()
-                    ->label("NIK / NIP")
                     ->maxLength(255),
                 Forms\Components\TextInput::make('telpon')
                     ->tel()
                     ->required()
                     ->maxLength(255),
+                Forms\Components\TextInput::make('user.email')
+                        ->label('Email')
+                        ->email()
+                        ->required()
+                        ->maxLength(255)
+                        ->columnSpan(1)
+                        ->afterStateHydrated(function (Forms\Components\TextInput $component) {
+                            $component->state(
+                                $component->getRecord()?->user?->email ?? ''
+                            );
+                        }),
+                // Password Field (Only for new users)
+                    Forms\Components\TextInput::make('user.password')
+                        ->label('Password')
+                        ->password()
+                        ->columnSpan(1),
             ]);
     }
 
@@ -80,10 +86,12 @@ class FacultyResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('faculty.fakultas')
+                    ->label('Fakultas'),
+                Tables\Columns\TextColumn::make('prodi.programstudi')
+                    ->label('Prodi'),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Nama Dekan'),
-                Tables\Columns\TextColumn::make('fakultas')
-                    ->searchable(),
+                    ->label('Nama Auditor'),
                 Tables\Columns\TextColumn::make('nidn')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('nik_nip')
@@ -122,9 +130,9 @@ class FacultyResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListFaculties::route('/'),
-            'create' => Pages\CreateFaculty::route('/create'),
-            'edit' => Pages\EditFaculty::route('/{record}/edit'),
+            'index' => Pages\ListAuditors::route('/'),
+            'create' => Pages\CreateAuditor::route('/create'),
+            'edit' => Pages\EditAuditor::route('/{record}/edit'),
         ];
     }
 }

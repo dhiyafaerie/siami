@@ -21,7 +21,7 @@ class StandardResource extends Resource
     protected static ?string $model = Standard::class;
     protected static ?string $navigationGroup = "AMI";
     protected static ?string $navigationLabel = "Standar";
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-inbox-stack';
 
     public static function form(Form $form): Form
     {
@@ -43,14 +43,15 @@ class StandardResource extends Resource
                     
                     ->maxLength(255),
                 Forms\Components\TextInput::make('iku')
-                    
+                    ->label("IKU")
                     ->maxLength(255),
                 Forms\Components\TextInput::make('ikt')
-                    
+                    ->label("IKT")
                     ->maxLength(255),
                     
                 Forms\Components\Select::make('cycles_id')
                     ->relationship('cycle', 'name')
+                    ->label("Siklus")
                     ->preload()
                     ->searchable(),
             ]);
@@ -76,7 +77,7 @@ class StandardResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('ikt')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('cycles.name'),
+                Tables\Columns\TextColumn::make('cycle.name'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
