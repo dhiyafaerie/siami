@@ -28,39 +28,23 @@ class FacultyResource extends Resource
     {
         return $form
             ->schema([
-                    // Dekan Name Field
-                    Forms\Components\TextInput::make('user.name')
-                        ->label('Dekan')
-                        ->required()
-                        ->maxLength(255)
-                        ->columnSpan(1)
-                        ->afterStateHydrated(function (TextInput $component) {
-                            $component->state(
-                                $component->getRecord()?->user?->name ?? ''
-                            );
-                        }),
                     
-                    Forms\Components\TextInput::make('user.email')
-                        ->label('Email')
-                        ->email()
-                        ->required()
-                        ->maxLength(255)
-                        ->columnSpan(1)
-                        ->afterStateHydrated(function (TextInput $component) {
-                            $component->state(
-                                $component->getRecord()?->user?->email ?? ''
-                            );
-                        }),
-                    
-                    // Password Field (Only for new users)
-                    Forms\Components\TextInput::make('user.password')
-                        ->label('Password')
-                        ->password()
-                        ->columnSpan(1),
-                
                 Forms\Components\TextInput::make('fakultas')
+                    ->label('Nama Fakultas')
                     ->required()
                     ->maxLength(255),
+
+            // Dekan Name Field
+                Forms\Components\TextInput::make('user.name')
+                    ->label('Nama Dekan')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpan(1)
+                    ->afterStateHydrated(function (TextInput $component) {
+                        $component->state(
+                            $component->getRecord()?->user?->name ?? ''
+                        );
+                    }),
                 Forms\Components\TextInput::make('nidn')
                     ->required()
                     ->label("NIDN")
@@ -73,6 +57,24 @@ class FacultyResource extends Resource
                     ->tel()
                     ->required()
                     ->maxLength(255),
+
+                Forms\Components\TextInput::make('user.email')
+                    ->label('Email')
+                    ->email()
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpan(1)
+                    ->afterStateHydrated(function (TextInput $component) {
+                        $component->state(
+                            $component->getRecord()?->user?->email ?? ''
+                        );
+                    }),
+                
+                // Password Field (Only for new users)
+                Forms\Components\TextInput::make('user.password')
+                    ->label('Password')
+                    ->password()
+                    ->columnSpan(1),
             ]);
     }
 
@@ -80,10 +82,10 @@ class FacultyResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('Nama Dekan'),
                 Tables\Columns\TextColumn::make('fakultas')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Nama Dekan'),
                 Tables\Columns\TextColumn::make('nidn')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('nik_nip')

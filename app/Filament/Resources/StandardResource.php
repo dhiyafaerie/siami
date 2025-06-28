@@ -36,18 +36,6 @@ class StandardResource extends Resource
                 Forms\Components\TextInput::make('keywords')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('standar_mutu')
-                    
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('pernyataan_standar')
-                    
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('iku')
-                    ->label("IKU")
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('ikt')
-                    ->label("IKT")
-                    ->maxLength(255),
                     
                 Forms\Components\Select::make('cycles_id')
                     ->relationship('cycle', 'name')
@@ -68,14 +56,6 @@ class StandardResource extends Resource
                     ->html()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('keywords')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('standar_mutu')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('pernyataan_standar')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('iku')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('ikt')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('cycle.name'),
                 Tables\Columns\TextColumn::make('created_at')
@@ -103,7 +83,7 @@ class StandardResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+
         ];
     }
 

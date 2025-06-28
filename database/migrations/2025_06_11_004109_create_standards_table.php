@@ -16,10 +16,6 @@ return new class extends Migration
             $table->string('nomor');
             $table->text('deskriptor');
             $table->string('keywords');
-            $table->string('standar_mutu');
-            $table->string('pernyataan_standar');
-            $table->string('iku');
-            $table->string('ikt');
             $table->foreignId('cycles_id')->constrained('cycles')->onDelete('cascade');
             $table->timestamps();
         });
