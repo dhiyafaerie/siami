@@ -22,6 +22,8 @@ class CycleResource extends Resource
     protected static ?string $navigationLabel = "Siklus";
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
+    protected static ?string $pluralModelLabel = 'Siklus';    
+    protected static ?string $title = 'Siklus';
 
     public static function form(Form $form): Form
     {

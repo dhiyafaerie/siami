@@ -21,4 +21,10 @@ class Prodi extends Model
     {
         return $this->belongsTo(User::class, 'users_id');    
     }
+
+    // Relationship to AuditScores
+    public function auditscore()
+    {
+        return $this->hasMany(Auditscore::class, 'prodis_id');
+    }
 }

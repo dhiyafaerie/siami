@@ -20,6 +20,8 @@ class ProdiResource extends Resource
     protected static ?string $model = Prodi::class;
     protected static ?string $navigationGroup = "User Management";
     protected static ?string $navigationLabel = "Prodi";
+    protected static ?string $pluralModelLabel = 'Prodi';    
+    protected static ?string $title = 'Prodi';
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
     public static function form(Form $form): Form

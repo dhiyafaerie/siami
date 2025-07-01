@@ -17,6 +17,9 @@ class AuditorResource extends Resource
 {
     protected static ?string $model = Auditor::class;
     protected static ?string $navigationGroup = "User Management";
+    protected static ?string $navigationLabel = 'Auditor';
+    protected static ?string $pluralModelLabel = 'Auditor';    
+    protected static ?string $title = 'Auditor';
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
     public static function form(Form $form): Form

@@ -20,6 +20,8 @@ class NonconformityResource extends Resource
 
     protected static ?string $navigationLabel = "KTS";
     protected static ?string $navigationIcon = 'heroicon-o-inbox-stack';
+    protected static ?string $pluralModelLabel = 'Ketidaksesuaian';    
+    protected static ?string $title = 'Ketidaksesuaian';
 
     public static function form(Form $form): Form
     {

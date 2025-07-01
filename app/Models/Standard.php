@@ -26,4 +26,9 @@ class Standard extends Model
     {
         return $this->belongsTo(Prodi::class, 'prodis_id');    
     }
+
+    public function auditscore()
+    {
+        return $this->hasMany(Auditscore::class, 'standards_id');
+    }
 }

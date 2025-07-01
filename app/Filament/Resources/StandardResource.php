@@ -21,6 +21,8 @@ class StandardResource extends Resource
     protected static ?string $model = Standard::class;
     protected static ?string $navigationGroup = "AMI";
     protected static ?string $navigationLabel = "Standar";
+    protected static ?string $pluralModelLabel = 'Standar';    
+    protected static ?string $title = 'Standar';
     protected static ?string $navigationIcon = 'heroicon-o-inbox-stack';
 
     public static function form(Form $form): Form

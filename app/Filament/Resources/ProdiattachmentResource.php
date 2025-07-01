@@ -19,7 +19,8 @@ class ProdiattachmentResource extends Resource
     protected static ?string $model = Prodiattachment::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
+    protected static ?string $pluralModelLabel = 'Lampiran Prodi';    
+    protected static ?string $title = 'Lampiran Prodi';
     public static function form(Form $form): Form
     {
         return $form
