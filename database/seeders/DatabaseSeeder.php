@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         RolePermissionSeeder::class,
         // Other seeders...
         ]);
+
         User::factory()->create([
             'name' => 'Ketua LPM',
             'email' => 'lpm@gmail.com',

@@ -30,9 +30,11 @@ class CycleResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('year')
+                    ->label('Tahun')
                     ->required()
                     ->maxLength(4),
                 Forms\Components\TextInput::make('name')
+                    ->label('Nama')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\DatePicker::make('start_date')

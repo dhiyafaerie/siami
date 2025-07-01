@@ -38,10 +38,10 @@ class StandardResource extends Resource
                 Forms\Components\TextInput::make('keywords')
                     ->required()
                     ->maxLength(255),
-                    
                 Forms\Components\Select::make('cycles_id')
                     ->relationship('cycle', 'name')
                     ->label("Siklus")
+                    ->required()
                     ->preload()
                     ->searchable(),
             ]);

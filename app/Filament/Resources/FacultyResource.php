@@ -49,10 +49,12 @@ class FacultyResource extends Resource
                     }),
                 Forms\Components\TextInput::make('nidn')
                     ->required()
+                    ->numeric()
                     ->label("NIDN")
                     ->maxLength(255),
                 Forms\Components\TextInput::make('nik_nip')
                     ->required()
+                    ->numeric()
                     ->label("NIK / NIP")
                     ->maxLength(255),
                 Forms\Components\TextInput::make('telpon')
@@ -76,6 +78,7 @@ class FacultyResource extends Resource
                 Forms\Components\TextInput::make('user.password')
                     ->label('Password')
                     ->password()
+                    ->required()
                     ->columnSpan(1),
             ]);
     }

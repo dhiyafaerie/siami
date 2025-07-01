@@ -30,6 +30,7 @@ class AuditorResource extends Resource
                 ->relationship('prodi', 'programstudi')
                 ->label("Prodi")
                 ->preload()
+                ->required()
                 ->searchable()
                 ->live()
                 ->afterStateUpdated(function ($state, Forms\Set $set, $get) {
@@ -44,6 +45,7 @@ class AuditorResource extends Resource
                 Forms\Components\Select::make('faculties_id')
                     ->relationship('faculty', 'fakultas')
                     ->label("Fakultas")
+                    ->required()
                     ->disabled() // Make it read-only since it will be auto-set
                     ->dehydrated(),
                 Forms\Components\TextInput::make('user.name')
@@ -81,6 +83,7 @@ class AuditorResource extends Resource
                     Forms\Components\TextInput::make('user.password')
                         ->label('Password')
                         ->password()
+                        ->required()
                         ->columnSpan(1),
             ]);
     }

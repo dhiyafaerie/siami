@@ -25,7 +25,7 @@ class StandardsTable extends Page implements HasTable
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationLabel = "Tabel Kompilasi";
     protected static ?string $pluralModelLabel = 'Tabel Kompilasi';    
-    protected static ?string $title = 'Tabel';
+    protected static ?string $title = 'Tabel Kompilasi';
     protected static string $view = 'filament.pages.standards-table';
 
     public function table(Table $table): Table

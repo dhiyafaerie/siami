@@ -31,6 +31,7 @@ class ProdiResource extends Resource
                 Forms\Components\Select::make('faculties_id')
                     ->relationship('faculty', 'fakultas')
                     ->label("Fakultas")
+                    ->required()
                     ->preload()
                     ->searchable(),
                 Forms\Components\TextInput::make('programstudi')
@@ -39,6 +40,7 @@ class ProdiResource extends Resource
                     ->maxLength(255),
                 Forms\Components\Radio::make('jenjang')
                     ->label('Jenjang')
+                    ->required()
                     ->options([
                         'sarjana' => 'Sarjana',
                         'magister' => 'Magister'
@@ -57,10 +59,12 @@ class ProdiResource extends Resource
                         }),
                 Forms\Components\TextInput::make('nidn')
                     ->required()
+                    ->numeric()
                     ->label("NIDN")
                     ->maxLength(255),
                 Forms\Components\TextInput::make('nik_nip')
                     ->required()
+                    ->numeric()
                     ->label("NIK / NIP")
                     ->maxLength(255),
                 Forms\Components\TextInput::make('telpon')
@@ -83,6 +87,7 @@ class ProdiResource extends Resource
                     Forms\Components\TextInput::make('user.password')
                         ->label('Password')
                         ->password()
+                        ->required()
                         ->columnSpan(1),
             ]);
     }
