@@ -16,4 +16,19 @@ class EditAuditor extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if (isset($data['user'])) {
+            $this->record->user->update([
+                'name' => $data['user']['name'],
+                'email' => $data['user']['email'],
+                ...(filled($data['user']['password']) ? ['password' => bcrypt($data['user']['password'])] : []),
+            ]);
+
+            unset($data['user']);
+        }
+
+        return $data;
+    }
 }

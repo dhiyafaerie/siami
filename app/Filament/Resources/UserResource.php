@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\Rule;
 
 class UserResource extends Resource
 {
@@ -31,7 +32,10 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('email')
                     ->email()
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->rules(fn ($record) => [
+                        Rule::unique('users', 'email')->ignore($record?->id),
+                    ]),
                 Forms\Components\Select::make('roles')
                     ->relationship('roles', 'name')
                     ->multiple()
@@ -39,7 +43,7 @@ class UserResource extends Resource
                     ->searchable(),
                 Forms\Components\TextInput::make('password')
                     ->password()
-                    ->required()
+                    ->required(fn (string $operation) => $operation === 'create')
                     ->maxLength(255),
             ]);
     }

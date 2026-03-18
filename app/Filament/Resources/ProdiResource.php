@@ -13,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\Rule;
 
 
 class ProdiResource extends Resource
@@ -61,12 +62,18 @@ class ProdiResource extends Resource
                     ->required()
                     ->numeric()
                     ->label("NIDN")
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->rules(fn ($record) => [
+                        Rule::unique('prodis', 'nidn')->ignore($record?->id),
+                    ]),
                 Forms\Components\TextInput::make('nik_nip')
                     ->required()
                     ->numeric()
                     ->label("NIK / NIP")
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->rules(fn ($record) => [
+                        Rule::unique('prodis', 'nik_nip')->ignore($record?->id),
+                    ]),
                 Forms\Components\TextInput::make('telpon')
                     ->tel()
                     ->required()
@@ -82,12 +89,15 @@ class ProdiResource extends Resource
                             $component->state(
                                 $component->getRecord()?->user?->email ?? ''
                             );
-                        }),
+                        })
+                        ->rules(fn ($record) => [
+                            Rule::unique('users', 'email')->ignore($record?->user?->id),
+                        ]),
                 // Password Field (Only for new users)
                     Forms\Components\TextInput::make('user.password')
                         ->label('Password')
                         ->password()
-                        ->required()
+                        ->required(fn (string $operation) => $operation === 'create')
                         ->columnSpan(1),
             ]);
     }

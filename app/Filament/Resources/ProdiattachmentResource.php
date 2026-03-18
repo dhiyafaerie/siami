@@ -42,7 +42,8 @@ class ProdiattachmentResource extends Resource
                 Forms\Components\Textarea::make('keterangan')
                     ->required()
                     ->columnSpanFull(),
-                Forms\Components\Textarea::make('link_bukti')
+                Forms\Components\TextInput::make('link_bukti')
+                    ->url()
                     ->required()
                     ->columnSpanFull(),
             ]);

@@ -14,6 +14,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\TextInput;
+use Illuminate\Validation\Rule;
 
 
 class FacultyResource extends Resource
@@ -51,12 +52,18 @@ class FacultyResource extends Resource
                     ->required()
                     ->numeric()
                     ->label("NIDN")
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->rules(fn ($record) => [
+                        Rule::unique('faculties', 'nidn')->ignore($record?->id),
+                    ]),
                 Forms\Components\TextInput::make('nik_nip')
                     ->required()
                     ->numeric()
                     ->label("NIK / NIP")
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->rules(fn ($record) => [
+                        Rule::unique('faculties', 'nik_nip')->ignore($record?->id),
+                    ]),
                 Forms\Components\TextInput::make('telpon')
                     ->tel()
                     ->required()
@@ -72,13 +79,16 @@ class FacultyResource extends Resource
                         $component->state(
                             $component->getRecord()?->user?->email ?? ''
                         );
-                    }),
+                    })
+                    ->rules(fn ($record) => [
+                        Rule::unique('users', 'email')->ignore($record?->user?->id),
+                    ]),
                 
                 // Password Field (Only for new users)
                 Forms\Components\TextInput::make('user.password')
                     ->label('Password')
                     ->password()
-                    ->required()
+                    ->required(fn (string $operation) => $operation === 'create')
                     ->columnSpan(1),
             ]);
     }

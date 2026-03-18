@@ -24,7 +24,7 @@ class EditProdi extends EditRecord
                     'name' => $data['user']['name'],
                     'email' => $data['user']['email'],
                     // only update password if it's filled
-                    ...(filled($data['user']['password']) ? ['password' => $data['user']['password']] : []),
+                    ...(filled($data['user']['password']) ? ['password' => bcrypt($data['user']['password'])] : []),
                 ]);
 
                 unset($data['user']); // Don't try to save this into the faculty table

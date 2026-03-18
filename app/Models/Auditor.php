@@ -10,14 +10,14 @@ class Auditor extends Model
     use HasFactory;
 
     protected $guarded = [];
-    public function Faculty()
+    public function faculty()
     {
-        return $this->belongsTo(Faculty::class, 'faculties_id');    
+        return $this->belongsTo(Faculty::class, 'faculties_id');
     }
 
-    public function Prodi()
+    public function prodi()
     {
-        return $this->belongsTo(Prodi::class, 'prodis_id');    
+        return $this->belongsTo(Prodi::class, 'prodis_id');
     }
 
     public function user()

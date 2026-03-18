@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('prodiattachments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('standards_id')->constrained();
-            $table->foreignId('prodis_id')->constrained();
+            $table->foreignId('standards_id')->constrained('standards')->onDelete('cascade');
+            $table->foreignId('prodis_id')->constrained('prodis')->onDelete('cascade');
             $table->foreignId('users_id')->constrained('users')->onDelete('cascade');
             $table->text('keterangan');
             $table->text('link_bukti');
