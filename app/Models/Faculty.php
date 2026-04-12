@@ -13,6 +13,11 @@ class Faculty extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'users_id');    
+        return $this->belongsTo(User::class, 'users_id');
+    }
+
+    public function prodis()
+    {
+        return $this->hasMany(Prodi::class, 'faculties_id');
     }
 }

@@ -96,16 +96,14 @@ class FacultyResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->striped()
             ->columns([
                 Tables\Columns\TextColumn::make('fakultas')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Nama Dekan'),
+                    ->label('Dekan'),
                 Tables\Columns\TextColumn::make('nidn')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('nik_nip')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('telpon')
+                    ->label('NIDN')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

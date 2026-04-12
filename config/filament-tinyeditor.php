@@ -10,7 +10,7 @@ return [
         ],
         'licence_key' => env('TINY_LICENSE_KEY', 'no-api-key'),
     ],
-    'provider' => 'cloud', // cloud|vendor
+    'provider' => 'vendor', // cloud|vendor
     // 'direction' => 'rtl',
     /**
      * change darkMode: 'auto'|'force'|'class'|'media'|false|'custom'
@@ -68,5 +68,10 @@ return [
             // 'fontsize' => '10px 12px 13px 14px 16px 18px 20px',
             // 'fontfamily' => 'Tahoma=tahoma,arial,helvetica,sans-serif;',
         ]
-    ]
+    ],
+
+    'custom_configs' => [
+        'entity_encoding' => 'raw',
+        'keep_styles' => false,
+    ],
 ];

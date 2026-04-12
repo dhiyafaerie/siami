@@ -31,30 +31,29 @@ class StandardsTableExport implements FromCollection, WithHeadings, WithMapping,
             $prodis = $standard->auditscore->pluck('prodi')->filter()->unique('id');
 
             if ($prodis->isEmpty()) {
-                // Standard with no scored prodi — still include a row
                 $rows->push([
                     'standard'    => $standard,
                     'prodi'       => null,
-                    'attachment'  => null,
+                    'attachments' => collect(),
                     'auditscore'  => null,
                 ]);
                 continue;
             }
 
             foreach ($prodis as $prodi) {
-                $attachment = $standard->prodiattachment
+                $attachments = $standard->prodiattachment
                     ->where('prodis_id', $prodi->id)
-                    ->first();
+                    ->values();
 
                 $score = $standard->auditscore
                     ->where('prodis_id', $prodi->id)
                     ->first();
 
                 $rows->push([
-                    'standard'   => $standard,
-                    'prodi'      => $prodi,
-                    'attachment' => $attachment,
-                    'auditscore' => $score,
+                    'standard'    => $standard,
+                    'prodi'       => $prodi,
+                    'attachments' => $attachments,
+                    'auditscore'  => $score,
                 ]);
             }
         }
@@ -91,13 +90,37 @@ class StandardsTableExport implements FromCollection, WithHeadings, WithMapping,
             default => '-',
         };
 
+        $attachments = $row['attachments'] ?? collect();
+        $keywords = array_filter(array_map('trim', explode(',', $row['standard']->keywords ?? '')));
+        $hasMultiple = count($keywords) > 1;
+        $letters = range('A', 'Z');
+
+        if ($hasMultiple) {
+            $deskriptorText = strip_tags($row['standard']->deskriptor);
+            $deskriptorText = preg_replace('/\s*([B-Z])\.\s/', "\n$1. ", $deskriptorText);
+
+            $keywordsText = collect($keywords)->values()->map(fn ($kw, $i) => ($letters[$i] ?? '') . '. ' . trim($kw))->implode("\n");
+
+            $linkBukti = $attachments->isNotEmpty()
+                ? $attachments->values()->map(fn ($a, $i) => ($letters[$i] ?? '') . '. ' . $a->link_bukti)->implode("\n")
+                : '-';
+            $keterangan = $attachments->isNotEmpty()
+                ? $attachments->values()->map(fn ($a, $i) => ($letters[$i] ?? '') . '. ' . $a->keterangan)->implode("\n")
+                : '-';
+        } else {
+            $deskriptorText = strip_tags($row['standard']->deskriptor);
+            $keywordsText = $row['standard']->keywords;
+            $linkBukti = $attachments->first()?->link_bukti ?? '-';
+            $keterangan = $attachments->first()?->keterangan ?? '-';
+        }
+
         return [
             $row['standard']->nomor,
-            strip_tags($row['standard']->deskriptor),
-            $row['standard']->keywords,
+            $deskriptorText,
+            $keywordsText,
             $row['prodi']?->programstudi ?? '-',
-            $row['attachment']?->link_bukti ?? '-',
-            $row['attachment']?->keterangan ?? '-',
+            $linkBukti,
+            $keterangan,
             $scoreText,
             $row['auditscore']?->notes ?? '-',
         ];

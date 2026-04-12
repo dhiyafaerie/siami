@@ -51,7 +51,7 @@ class User extends Authenticatable
 
     public function faculty()
     {
-        return $this->hasOne(Faculty::class);
+        return $this->hasOne(Faculty::class, 'users_id');
     }
 
     public function prodi()

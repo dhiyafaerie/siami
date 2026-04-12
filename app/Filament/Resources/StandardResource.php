@@ -12,7 +12,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use AmidEsfahani\FilamentTinyEditor\TinyEditor;
 use Filament\Forms\Set;
 use Illuminate\Support\Str;
 
@@ -32,18 +31,22 @@ class StandardResource extends Resource
                 Forms\Components\TextInput::make('nomor')
                     ->required()
                     ->maxLength(255),
-                TinyEditor::make('deskriptor')
-                    ->required()
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('keywords')
-                    ->required()
-                    ->maxLength(255),
                 Forms\Components\Select::make('cycles_id')
                     ->relationship('cycle', 'name')
                     ->label("Siklus")
                     ->required()
                     ->preload()
                     ->searchable(),
+                Forms\Components\RichEditor::make('deskriptor')
+                    ->required()
+                    ->helperText('Jika memiliki sub-deskriptor, gunakan format A., B., C. dst.')
+                    ->columnSpanFull(),
+                Forms\Components\TagsInput::make('keywords')
+                    ->required()
+                    ->separator(',')
+                    ->placeholder('Ketik keyword lalu tekan Enter')
+                    ->helperText('Tambahkan keyword per sub-deskriptor. Contoh: tingkat kepuasan mahasiswa, tindak lanjut kepuasan mahasiswa')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -56,9 +59,32 @@ class StandardResource extends Resource
                 Tables\Columns\TextColumn::make('deskriptor')
                     ->wrap()
                     ->html()
-                    ->searchable(),
+                    ->searchable()
+                    ->state(function ($record) {
+                        $text = strip_tags($record->deskriptor);
+                        $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
+                        if (count($keywords) > 1) {
+                            $text = preg_replace('/\s*([B-Z])\.\s/', '<br><strong>$1.</strong> ', $text);
+                            if (preg_match('/^A\.\s/', $text)) {
+                                $text = '<strong>A.</strong> ' . substr($text, 3);
+                            }
+                        }
+                        return $text;
+                    }),
                 Tables\Columns\TextColumn::make('keywords')
-                    ->searchable(),
+                    ->searchable()
+                    ->html()
+                    ->wrap()
+                    ->state(function ($record) {
+                        $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
+                        if (count($keywords) <= 1) {
+                            return $record->keywords;
+                        }
+                        $letters = range('A', 'Z');
+                        return collect($keywords)->values()->map(fn ($kw, $i) =>
+                            '<strong>' . ($letters[$i] ?? '') . '.</strong> ' . e(trim($kw))
+                        )->implode('<br>');
+                    }),
                 Tables\Columns\TextColumn::make('cycle.name'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

@@ -4,32 +4,38 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Auditscore extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $guarded = [];
 
-    // Relationship to Standard
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['score', 'notes', 'prodis_id', 'standards_id'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
     public function standard()
     {
         return $this->belongsTo(Standard::class, 'standards_id');
     }
 
-    // Relationship to User (Auditor)
     public function auditor()
     {
         return $this->belongsTo(User::class, 'auditors_id');
     }
 
-    // Relationship to Prodi
     public function prodi()
     {
         return $this->belongsTo(Prodi::class, 'prodis_id');
     }
 
-    // Accessor for score text
     public function getScoreTextAttribute()
     {
         return match($this->score) {

@@ -1,0 +1,257 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@config 'tailwind.config.js';
+
+/* ============================================================
+   TABLE STYLING
+   ============================================================ */
+
+.fi-ta-table th,
+.fi-ta-table td {
+    @apply border-r border-b border-gray-200 dark:border-gray-700;
+}
+
+.fi-ta-table thead th {
+    @apply bg-green-50 dark:bg-gray-800 text-green-900 dark:text-green-300
+           font-semibold text-sm px-4 py-3;
+}
+
+/* Center + resize header cell label */
+.fi-ta-header-cell-label {
+    @apply justify-center text-center w-full text-base;
+}
+
+.fi-ta-table tbody td {
+    @apply px-4 py-3 text-sm text-gray-700 dark:text-gray-300;
+}
+
+/* Center body cell content — targets the flex container inside fi-ta-text */
+.fi-ta-text > div,
+.fi-ta-text > ul {
+    justify-content: center;
+    text-align: center;
+}
+
+/* Description text color */
+.fi-ta-text p {
+    @apply text-gray-950 dark:text-white;
+}
+
+.fi-ta-table tbody tr {
+    @apply transition-colors duration-150;
+}
+.fi-ta-table tbody tr:hover td {
+    @apply bg-green-50/70 dark:bg-green-900/10;
+}
+
+.fi-ta-table-container {
+    @apply rounded-xl overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700 shadow-sm;
+}
+
+.fi-ta-footer {
+    @apply border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-2;
+}
+
+/* ============================================================
+   SECTION / CARD PANELS
+   ============================================================ */
+
+.fi-section {
+    @apply rounded-2xl shadow-sm ring-1 ring-gray-200 dark:ring-gray-700
+           bg-white dark:bg-gray-900;
+}
+
+.fi-section-header {
+    @apply border-b border-gray-100 dark:border-gray-700 px-6 py-4;
+}
+
+.fi-section-content {
+    @apply px-6 py-4;
+}
+
+/* ============================================================
+   STATS OVERVIEW WIDGET
+   ============================================================ */
+
+.fi-wi-stats-overview-stat {
+    @apply rounded-2xl ring-1 ring-gray-200 dark:ring-gray-700
+           shadow-sm p-5 transition-shadow duration-200 hover:shadow-md;
+}
+
+.fi-wi-stats-overview-stat-label {
+    @apply text-xs font-semibold uppercase tracking-widest
+           text-gray-700 dark:text-gray-200;
+}
+
+.fi-wi-stats-overview-stat-value {
+    @apply text-3xl font-bold text-gray-900 dark:text-white mt-1;
+}
+
+.fi-wi-stats-overview-stat-description {
+    @apply text-xs font-medium text-gray-600 dark:text-gray-300 mt-1;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.fi-btn {
+    @apply rounded-lg font-medium text-sm transition-all duration-150
+           shadow-sm focus:ring-2 focus:ring-offset-1;
+}
+
+.fi-btn-color-primary {
+    @apply bg-green-600 text-white hover:bg-green-700
+           focus:ring-green-500 shadow-green-200 dark:shadow-green-900/30;
+}
+
+.fi-btn-color-gray {
+    @apply bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200
+           ring-1 ring-gray-300 dark:ring-gray-600
+           hover:bg-gray-50 dark:hover:bg-gray-700;
+}
+
+.fi-btn-color-danger {
+    @apply bg-red-500 text-white hover:bg-red-600 focus:ring-red-400;
+}
+
+.fi-btn-color-success {
+    @apply bg-green-500 text-white hover:bg-green-600 focus:ring-green-400;
+}
+
+/* ============================================================
+   BADGES
+   ============================================================ */
+
+.fi-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5
+           text-xs font-semibold ring-1 ring-inset;
+}
+
+/* ============================================================
+   BRAND NAME
+   ============================================================ */
+
+.fi-logo {
+    @apply font-extrabold text-2xl tracking-tight;
+    background: linear-gradient(135deg, #16a34a, #4ade80);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+
+.fi-sidebar {
+    @apply bg-white dark:bg-gray-900
+           border-r border-gray-100 dark:border-gray-800
+           shadow-sm;
+}
+
+.fi-sidebar-nav-item {
+    @apply rounded-xl mx-2 transition-all duration-150;
+}
+
+.fi-sidebar-item-button {
+    @apply rounded-xl font-medium text-sm transition-all duration-150;
+}
+
+.fi-sidebar-item-active-indicator {
+    @apply bg-green-600;
+}
+
+/* ============================================================
+   TOPBAR / HEADER
+   ============================================================ */
+
+.fi-topbar {
+    @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm
+           border-b border-gray-100 dark:border-gray-800
+           shadow-sm sticky top-0 z-40;
+}
+
+/* ============================================================
+   FORM INPUTS
+   ============================================================ */
+
+.fi-input {
+    @apply rounded-lg ring-1 ring-gray-300 dark:ring-gray-600
+           bg-white dark:bg-gray-800
+           text-sm text-gray-900 dark:text-white
+           focus:ring-2 focus:ring-green-500 focus:ring-offset-0
+           transition-shadow duration-150;
+}
+
+.fi-select-input {
+    @apply rounded-lg ring-1 ring-gray-300 dark:ring-gray-600
+           focus:ring-2 focus:ring-green-500;
+}
+
+.fi-fo-field-wrp-label label {
+    @apply text-sm font-medium text-gray-700 dark:text-gray-300;
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+
+.fi-modal-window {
+    @apply rounded-2xl shadow-2xl ring-1 ring-gray-200 dark:ring-gray-700
+           bg-white dark:bg-gray-900;
+}
+
+.fi-modal-header {
+    @apply border-b border-gray-100 dark:border-gray-700 px-6 py-4;
+}
+
+.fi-modal-footer {
+    @apply border-t border-gray-100 dark:border-gray-700 px-6 py-4
+           bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl;
+}
+
+/* ============================================================
+   DROPDOWN MENUS
+   ============================================================ */
+
+.fi-dropdown-panel {
+    @apply rounded-xl shadow-lg ring-1 ring-gray-200 dark:ring-gray-700
+           bg-white dark:bg-gray-900 overflow-hidden;
+}
+
+.fi-dropdown-list-item-button {
+    @apply text-sm px-3 py-2 w-full text-left
+           hover:bg-green-50 dark:hover:bg-green-900/20
+           transition-colors duration-100;
+}
+
+/* ============================================================
+   NOTIFICATIONS
+   ============================================================ */
+
+.fi-no-notification {
+    @apply rounded-2xl shadow-lg ring-1 ring-gray-200 dark:ring-gray-700
+           bg-white dark:bg-gray-900;
+}
+
+/* ============================================================
+   BREADCRUMBS & PAGE HEADER
+   ============================================================ */
+
+.fi-page-header-heading {
+    @apply text-2xl font-bold text-gray-900 dark:text-white tracking-tight;
+}
+
+.fi-breadcrumbs-item-label {
+    @apply text-sm text-gray-500 dark:text-gray-400 hover:text-green-600 transition-colors;
+}
+
+/* ============================================================
+   FILTERS
+   ============================================================ */
+
+.fi-ta-filters-form {
+    @apply bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4
+           ring-1 ring-gray-200 dark:ring-gray-700;
+}

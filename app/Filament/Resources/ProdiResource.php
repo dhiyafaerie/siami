@@ -107,15 +107,13 @@ class ProdiResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('programstudi')
+                    ->label('Prodi')
+                    ->formatStateUsing(fn ($record) => ucfirst($record->jenjang) . ' ' . $record->programstudi)
                     ->searchable(),
-                Tables\Columns\TextColumn::make('jenjang'),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Nama Kaprodi'),
+                    ->label('Kaprodi'),
                 Tables\Columns\TextColumn::make('nidn')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('nik_nip')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('telpon')
+                    ->label('NIDN')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

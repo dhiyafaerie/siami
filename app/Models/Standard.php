@@ -12,6 +12,16 @@ class Standard extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'deskriptor' => 'string',
+    ];
+
+    public function getDeskriptorAttribute(?string $value): ?string
+    {
+        if ($value === null) return null;
+        return str_replace('&nbsp;', ' ', $value);
+    }
+
     public function cycle()
     {
         return $this->belongsTo(Cycle::class, 'cycles_id');    

@@ -103,16 +103,14 @@ class AuditorResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('faculty.fakultas')
-                    ->label('Fakultas'),
-                Tables\Columns\TextColumn::make('prodi.programstudi')
-                    ->label('Prodi'),
+                    ->label('Fakultas / Prodi')
+                    ->description(fn ($record) => $record->prodi?->programstudi)
+                    ->alignCenter()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Nama Auditor'),
+                    ->label('Auditor'),
                 Tables\Columns\TextColumn::make('nidn')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('nik_nip')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('telpon')
+                    ->label('NIDN')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

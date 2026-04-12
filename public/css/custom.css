@@ -1,0 +1,121 @@
+/* Vertical grid lines on Filament tables */
+.fi-ta-table th,
+.fi-ta-table td {
+    border-right: 1px solid #e5e7eb;
+}
+
+.dark .fi-ta-table th,
+.dark .fi-ta-table td {
+    border-right: 1px solid #374151;
+}
+
+/* ── Welcome Banner ─────────────────────────────────────────── */
+.siami-welcome-banner {
+    background: linear-gradient(135deg, #16a34a 0%, #059669 50%, #0d9488 100%);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    color: white;
+    box-shadow: 0 10px 40px rgba(22, 163, 74, 0.3);
+    overflow: hidden;
+    position: relative;
+}
+
+.siami-welcome-banner::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+}
+
+.siami-welcome-banner::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: 30%;
+    width: 300px; height: 300px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+}
+
+.siami-welcome-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+}
+
+.siami-welcome-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 0.6rem;
+}
+
+.siami-welcome-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0 0 0.4rem;
+    line-height: 1.2;
+}
+
+.siami-welcome-subtitle {
+    font-size: 0.92rem;
+    color: rgba(255,255,255,0.85);
+    margin: 0 0 1rem;
+    max-width: 480px;
+}
+
+.siami-welcome-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.8);
+    flex-wrap: wrap;
+}
+
+.siami-welcome-meta strong {
+    color: white;
+}
+
+.siami-divider {
+    opacity: 0.5;
+}
+
+.siami-welcome-illustration {
+    width: 160px;
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.siami-welcome-illustration svg {
+    width: 100%;
+    height: auto;
+}
+
+@media (max-width: 640px) {
+    .siami-welcome-illustration { display: none; }
+    .siami-welcome-title { font-size: 1.3rem; }
+}
+
+/* ── Stat Cards Enhancement ─────────────────────────────────── */
+.fi-wi-stats-overview-stat {
+    border-radius: 14px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.fi-wi-stats-overview-stat:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+}
