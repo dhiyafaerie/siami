@@ -63,11 +63,11 @@
                 @endphp
                 <tr>
                     <td>{{ $standard->nomor }}</td>
-                    <td>{!! $hasMultiple ? preg_replace('/\s*([B-Z])\.\s/', '<br>$1. ', strip_tags($standard->deskriptor)) : strip_tags($standard->deskriptor) !!}</td>
+                    <td>{!! $hasMultiple ? preg_replace('/\s*([B-Z])\.\s/', '<hr style="border-top:1px solid #ccc;margin:4px 0">$1. ', strip_tags($standard->deskriptor)) : strip_tags($standard->deskriptor) !!}</td>
                     <td>
                         @if($hasMultiple)
                             @foreach($keywords as $i => $kw)
-                                <strong>{{ $letters[$i] ?? '' }}.</strong> {{ trim($kw) }}@if(!$loop->last)<br>@endif
+                                <strong>{{ $letters[$i] ?? '' }}.</strong> {{ trim($kw) }}@if(!$loop->last)<hr style="border-top:1px solid #ccc;margin:4px 0">@endif
                             @endforeach
                         @else
                             {{ $standard->keywords }}
@@ -78,7 +78,7 @@
                             @foreach($attachments as $i => $att)
                                 @if($hasMultiple)<strong>{{ $letters[$i] ?? '' }}.</strong> @endif
                                 <a href="{{ $att->link_bukti }}" target="_blank">{{ $att->link_bukti }}</a>
-                                @if(!$loop->last)<br>@endif
+                                @if(!$loop->last){!! $hasMultiple ? '<hr style="border-top:1px solid #ccc;margin:4px 0">' : '<br>' !!}@endif
                             @endforeach
                         @else
                             <span style="color:#999">-</span>
@@ -89,7 +89,7 @@
                             @foreach($attachments as $i => $att)
                                 @if($hasMultiple)<strong>{{ $letters[$i] ?? '' }}.</strong> @endif
                                 {{ $att->keterangan }}
-                                @if(!$loop->last)<br>@endif
+                                @if(!$loop->last){!! $hasMultiple ? '<hr style="border-top:1px solid #ccc;margin:4px 0">' : '<br>' !!}@endif
                             @endforeach
                         @else
                             -

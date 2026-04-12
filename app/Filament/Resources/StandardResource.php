@@ -64,7 +64,7 @@ class StandardResource extends Resource
                         $text = strip_tags($record->deskriptor);
                         $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
                         if (count($keywords) > 1) {
-                            $text = preg_replace('/\s*([B-Z])\.\s/', '<br><strong>$1.</strong> ', $text);
+                            $text = preg_replace('/\s*([B-Z])\.\s/', '<hr style="border-top:1px solid #d1d5db;margin:6px 0"><strong>$1.</strong> ', $text);
                             if (preg_match('/^A\.\s/', $text)) {
                                 $text = '<strong>A.</strong> ' . substr($text, 3);
                             }
@@ -83,7 +83,7 @@ class StandardResource extends Resource
                         $letters = range('A', 'Z');
                         return collect($keywords)->values()->map(fn ($kw, $i) =>
                             '<strong>' . ($letters[$i] ?? '') . '.</strong> ' . e(trim($kw))
-                        )->implode('<br>');
+                        )->implode('<hr style="border-top:1px solid #d1d5db;margin:6px 0">');
                     }),
                 Tables\Columns\TextColumn::make('cycle.name'),
                 Tables\Columns\TextColumn::make('created_at')

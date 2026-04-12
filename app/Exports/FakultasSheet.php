@@ -102,15 +102,16 @@ class FakultasSheet implements FromCollection, WithTitle, WithHeadings, WithMapp
 
         if ($hasMultiple) {
             $deskriptorText = strip_tags($row['standard']->deskriptor);
-            $deskriptorText = preg_replace('/\s*([B-Z])\.\s/', "\n$1. ", $deskriptorText);
+            $deskriptorText = preg_replace('/\s*([B-Z])\.\s/', "\n────────────────\n" . '$1. ', $deskriptorText);
 
-            $keywordsText = collect($keywords)->values()->map(fn ($kw, $i) => ($letters[$i] ?? '') . '. ' . trim($kw))->implode("\n");
+            $separator = "\n────────────────\n";
+            $keywordsText = collect($keywords)->values()->map(fn ($kw, $i) => ($letters[$i] ?? '') . '. ' . trim($kw))->implode($separator);
 
             $linkBukti = $attachments->isNotEmpty()
-                ? $attachments->values()->map(fn ($a, $i) => ($letters[$i] ?? '') . '. ' . $a->link_bukti)->implode("\n")
+                ? $attachments->values()->map(fn ($a, $i) => ($letters[$i] ?? '') . '. ' . $a->link_bukti)->implode($separator)
                 : '-';
             $keterangan = $attachments->isNotEmpty()
-                ? $attachments->values()->map(fn ($a, $i) => ($letters[$i] ?? '') . '. ' . $a->keterangan)->implode("\n")
+                ? $attachments->values()->map(fn ($a, $i) => ($letters[$i] ?? '') . '. ' . $a->keterangan)->implode($separator)
                 : '-';
         } else {
             $deskriptorText = strip_tags($row['standard']->deskriptor);
@@ -133,6 +134,11 @@ class FakultasSheet implements FromCollection, WithTitle, WithHeadings, WithMapp
 
     public function styles(Worksheet $sheet): array
     {
+        $lastRow = $this->rows->count() + 1;
+
+        $sheet->getStyle("A2:H{$lastRow}")->getAlignment()->setWrapText(true);
+        $sheet->getStyle("A2:H{$lastRow}")->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP);
+
         return [
             1 => [
                 'font' => ['bold' => true],

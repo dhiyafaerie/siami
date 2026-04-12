@@ -169,7 +169,7 @@ class StandardsTable extends Page implements HasTable
                         $text = strip_tags($record->deskriptor);
                         $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
                         if (count($keywords) > 1) {
-                            $text = preg_replace('/\s*([B-Z])\.\s/', '<br><strong>$1.</strong> ', $text);
+                            $text = preg_replace('/\s*([B-Z])\.\s/', '<hr style="border-top:1px solid #d1d5db;margin:6px 0"><strong>$1.</strong> ', $text);
                             if (preg_match('/^A\.\s/', $text)) {
                                 $text = '<strong>A.</strong> ' . substr($text, 3);
                             }
@@ -191,7 +191,7 @@ class StandardsTable extends Page implements HasTable
                         $letters = range('A', 'Z');
                         return collect($keywords)->values()->map(fn ($kw, $i) =>
                             '<strong>' . ($letters[$i] ?? '') . '.</strong> ' . e(trim($kw))
-                        )->implode('<br>');
+                        )->implode('<hr style="border-top:1px solid #d1d5db;margin:6px 0">');
                     }),
 
                 Tables\Columns\TextColumn::make('prodiattachment.link_bukti')
@@ -204,13 +204,14 @@ class StandardsTable extends Page implements HasTable
                         $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
                         $hasMultiple = count($keywords) > 1;
                         $letters = range('A', 'Z');
+                        $separator = $hasMultiple ? '<hr style="border-top:1px solid #d1d5db;margin:6px 0">' : '<br>';
 
                         return $attachments->values()->map(function ($attachment, $index) use ($isAuditor, $hasMultiple, $letters) {
                             $url = e($attachment->link_bukti);
                             $label = $isAuditor ? (strlen($url) > 40 ? substr($url, 0, 40) . '…' : $url) : $url;
                             $prefix = $hasMultiple ? '<strong>' . ($letters[$index] ?? '') . '.</strong> ' : '';
                             return $prefix . '<a href="' . $url . '" target="_blank" rel="noopener noreferrer">' . $label . '</a>';
-                        })->implode('<br>');
+                        })->implode($separator);
                     })
                     ->html(),
 
@@ -224,11 +225,12 @@ class StandardsTable extends Page implements HasTable
                         $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
                         $hasMultiple = count($keywords) > 1;
                         $letters = range('A', 'Z');
+                        $separator = $hasMultiple ? '<hr style="border-top:1px solid #d1d5db;margin:6px 0">' : '<br>';
 
                         return $attachments->values()->map(function ($a, $index) use ($hasMultiple, $letters) {
                             $prefix = $hasMultiple ? '<strong>' . ($letters[$index] ?? '') . '.</strong> ' : '';
                             return $prefix . e($a->keterangan);
-                        })->implode('<br>');
+                        })->implode($separator);
                     })
                     ->html()
                     ->wrap(),
