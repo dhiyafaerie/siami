@@ -60,53 +60,68 @@
                     $hasMultiple = count($keywords) > 1;
                     $letters = range('A', 'Z');
                     $score = $standard->auditscore->first();
+                    $deskParts = $hasMultiple
+                        ? preg_split('/\s*(?=[B-Z]\.\s)/', strip_tags($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY)
+                        : [strip_tags($standard->deskriptor)];
+                    $subCount = $hasMultiple ? count($keywords) : 1;
                 @endphp
-                <tr>
-                    <td>{{ $standard->nomor }}</td>
-                    <td>{!! $hasMultiple ? preg_replace('/\s*([B-Z])\.\s/', '<hr style="border-top:1px solid #ccc;margin:4px 0">$1. ', strip_tags($standard->deskriptor)) : strip_tags($standard->deskriptor) !!}</td>
-                    <td>
-                        @if($hasMultiple)
-                            @foreach($keywords as $i => $kw)
-                                <strong>{{ $letters[$i] ?? '' }}.</strong> {{ trim($kw) }}@if(!$loop->last)<hr style="border-top:1px solid #ccc;margin:4px 0">@endif
-                            @endforeach
-                        @else
-                            {{ $standard->keywords }}
-                        @endif
-                    </td>
-                    <td>
-                        @if($attachments->isNotEmpty())
-                            @foreach($attachments as $i => $att)
-                                @if($hasMultiple)<strong>{{ $letters[$i] ?? '' }}.</strong> @endif
-                                <a href="{{ $att->link_bukti }}" target="_blank">{{ $att->link_bukti }}</a>
-                                @if(!$loop->last){!! $hasMultiple ? '<hr style="border-top:1px solid #ccc;margin:4px 0">' : '<br>' !!}@endif
-                            @endforeach
-                        @else
-                            <span style="color:#999">-</span>
-                        @endif
-                    </td>
-                    <td>
-                        @if($attachments->isNotEmpty())
-                            @foreach($attachments as $i => $att)
-                                @if($hasMultiple)<strong>{{ $letters[$i] ?? '' }}.</strong> @endif
-                                {{ $att->keterangan }}
-                                @if(!$loop->last){!! $hasMultiple ? '<hr style="border-top:1px solid #ccc;margin:4px 0">' : '<br>' !!}@endif
-                            @endforeach
-                        @else
-                            -
-                        @endif
-                    </td>
-                    <td>
-                        @if($score)
-                            <span class="badge badge-{{ $score->score }}">
-                                {{ $score->score }} -
-                                {{ match($score->score) { 1 => 'Kurang Cukup', 2 => 'Kurang', 3 => 'Cukup', 4 => 'Sangat Cukup', default => 'N/A' } }}
-                            </span>
-                        @else
-                            <span class="badge badge-none">Belum Dinilai</span>
-                        @endif
-                    </td>
-                    <td>{{ $score?->notes ?? '-' }}</td>
-                </tr>
+                @if($hasMultiple)
+                    @foreach($keywords as $i => $kw)
+                        <tr>
+                            @if($i === 0)
+                                <td rowspan="{{ $subCount }}" style="vertical-align:middle">{{ $standard->nomor }}</td>
+                            @endif
+                            <td>{{ trim($deskParts[$i] ?? '') }}</td>
+                            <td>{{ trim($kw) }}</td>
+                            <td>
+                                @if(isset($attachments[$i]))
+                                    <a href="{{ $attachments[$i]->link_bukti }}" target="_blank">{{ $attachments[$i]->link_bukti }}</a>
+                                @else
+                                    <span style="color:#999">-</span>
+                                @endif
+                            </td>
+                            <td>{{ $attachments[$i]->keterangan ?? '-' }}</td>
+                            @if($i === 0)
+                                <td rowspan="{{ $subCount }}" style="vertical-align:middle">
+                                    @if($score)
+                                        <span class="badge badge-{{ $score->score }}">
+                                            {{ $score->score }} -
+                                            {{ match($score->score) { 1 => 'Kurang Cukup', 2 => 'Kurang', 3 => 'Cukup', 4 => 'Sangat Cukup', default => 'N/A' } }}
+                                        </span>
+                                    @else
+                                        <span class="badge badge-none">Belum Dinilai</span>
+                                    @endif
+                                </td>
+                                <td rowspan="{{ $subCount }}" style="vertical-align:middle">{{ $score?->notes ?? '-' }}</td>
+                            @endif
+                        </tr>
+                    @endforeach
+                @else
+                    <tr>
+                        <td>{{ $standard->nomor }}</td>
+                        <td>{{ strip_tags($standard->deskriptor) }}</td>
+                        <td>{{ $standard->keywords }}</td>
+                        <td>
+                            @if($attachments->isNotEmpty())
+                                <a href="{{ $attachments->first()->link_bukti }}" target="_blank">{{ $attachments->first()->link_bukti }}</a>
+                            @else
+                                <span style="color:#999">-</span>
+                            @endif
+                        </td>
+                        <td>{{ $attachments->first()?->keterangan ?? '-' }}</td>
+                        <td>
+                            @if($score)
+                                <span class="badge badge-{{ $score->score }}">
+                                    {{ $score->score }} -
+                                    {{ match($score->score) { 1 => 'Kurang Cukup', 2 => 'Kurang', 3 => 'Cukup', 4 => 'Sangat Cukup', default => 'N/A' } }}
+                                </span>
+                            @else
+                                <span class="badge badge-none">Belum Dinilai</span>
+                            @endif
+                        </td>
+                        <td>{{ $score?->notes ?? '-' }}</td>
+                    </tr>
+                @endif
             @empty
                 <tr><td colspan="7" style="text-align:center;color:#999">Tidak ada standar</td></tr>
             @endforelse

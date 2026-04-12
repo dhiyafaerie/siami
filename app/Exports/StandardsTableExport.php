@@ -4,39 +4,69 @@ namespace App\Exports;
 
 use App\Models\Standard;
 use Illuminate\Support\Facades\Auth;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Illuminate\Support\Collection;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-class StandardsTableExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
+class StandardsTableExport implements FromArray, WithHeadings, WithStyles, ShouldAutoSize, WithEvents
 {
-    protected Collection $rows;
+    protected array $data = [];
+    protected array $mergeRanges = [];
+    protected int $totalRows = 0;
 
     public function __construct()
     {
         $userId = Auth::id();
+        $letters = range('A', 'Z');
 
         $standards = Standard::with([
             'prodiattachment.prodi',
             'auditscore' => fn ($q) => $q->where('auditors_id', $userId)->with('prodi'),
         ])->get();
 
-        $rows = collect();
+        $currentRow = 2; // row 1 = header
 
         foreach ($standards as $standard) {
             $prodis = $standard->auditscore->pluck('prodi')->filter()->unique('id');
+            $keywords = array_filter(array_map('trim', explode(',', $standard->keywords ?? '')));
+            $hasMultiple = count($keywords) > 1;
 
             if ($prodis->isEmpty()) {
-                $rows->push([
-                    'standard'    => $standard,
-                    'prodi'       => null,
-                    'attachments' => collect(),
-                    'auditscore'  => null,
-                ]);
+                if ($hasMultiple) {
+                    $deskParts = preg_split('/\s*(?=[B-Z]\.\s)/', strip_tags($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY);
+                    $startRow = $currentRow;
+
+                    foreach ($keywords as $i => $kw) {
+                        $this->data[] = [
+                            $i === 0 ? $standard->nomor : '',
+                            trim($deskParts[$i] ?? ''),
+                            trim($kw),
+                            '-',
+                            '-',
+                            '-',
+                            '-',
+                            '-',
+                        ];
+                        $currentRow++;
+                    }
+
+                    $this->addMerges($startRow, $currentRow - 1, ['A', 'D', 'G', 'H']);
+                } else {
+                    $this->data[] = [
+                        $standard->nomor,
+                        strip_tags($standard->deskriptor),
+                        $standard->keywords,
+                        '-', '-', '-', '-', '-',
+                    ];
+                    $currentRow++;
+                }
                 continue;
             }
 
@@ -49,21 +79,57 @@ class StandardsTableExport implements FromCollection, WithHeadings, WithMapping,
                     ->where('prodis_id', $prodi->id)
                     ->first();
 
-                $rows->push([
-                    'standard'    => $standard,
-                    'prodi'       => $prodi,
-                    'attachments' => $attachments,
-                    'auditscore'  => $score,
-                ]);
+                $scoreText = match ($score?->score) {
+                    1 => '1 - Kurang Cukup',
+                    2 => '2 - Kurang',
+                    3 => '3 - Cukup',
+                    4 => '4 - Sangat Cukup',
+                    default => '-',
+                };
+
+                if ($hasMultiple) {
+                    $deskParts = preg_split('/\s*(?=[B-Z]\.\s)/', strip_tags($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY);
+                    $startRow = $currentRow;
+
+                    foreach ($keywords as $i => $kw) {
+                        $att = $attachments[$i] ?? null;
+
+                        $this->data[] = [
+                            $i === 0 ? $standard->nomor : '',
+                            trim($deskParts[$i] ?? ''),
+                            trim($kw),
+                            $i === 0 ? ($prodi->programstudi ?? '-') : '',
+                            $att ? $att->link_bukti : '-',
+                            $att ? $att->keterangan : '-',
+                            $i === 0 ? $scoreText : '',
+                            $i === 0 ? ($score?->notes ?? '-') : '',
+                        ];
+                        $currentRow++;
+                    }
+
+                    $this->addMerges($startRow, $currentRow - 1, ['A', 'D', 'G', 'H']);
+                } else {
+                    $this->data[] = [
+                        $standard->nomor,
+                        strip_tags($standard->deskriptor),
+                        $standard->keywords,
+                        $prodi->programstudi ?? '-',
+                        $attachments->first()?->link_bukti ?? '-',
+                        $attachments->first()?->keterangan ?? '-',
+                        $scoreText,
+                        $score?->notes ?? '-',
+                    ];
+                    $currentRow++;
+                }
             }
         }
 
-        $this->rows = $rows;
+        $this->totalRows = $currentRow - 1;
     }
 
-    public function collection(): Collection
+    public function array(): array
     {
-        return $this->rows;
+        return $this->data;
     }
 
     public function headings(): array
@@ -80,69 +146,58 @@ class StandardsTableExport implements FromCollection, WithHeadings, WithMapping,
         ];
     }
 
-    public function map($row): array
-    {
-        $scoreText = match($row['auditscore']?->score) {
-            1 => '1 - Kurang Cukup',
-            2 => '2 - Kurang',
-            3 => '3 - Cukup',
-            4 => '4 - Sangat Cukup',
-            default => '-',
-        };
-
-        $attachments = $row['attachments'] ?? collect();
-        $keywords = array_filter(array_map('trim', explode(',', $row['standard']->keywords ?? '')));
-        $hasMultiple = count($keywords) > 1;
-        $letters = range('A', 'Z');
-
-        if ($hasMultiple) {
-            $deskriptorText = strip_tags($row['standard']->deskriptor);
-            $deskriptorText = preg_replace('/\s*([B-Z])\.\s/', "\n────────────────\n" . '$1. ', $deskriptorText);
-
-            $separator = "\n────────────────\n";
-            $keywordsText = collect($keywords)->values()->map(fn ($kw, $i) => ($letters[$i] ?? '') . '. ' . trim($kw))->implode($separator);
-
-            $linkBukti = $attachments->isNotEmpty()
-                ? $attachments->values()->map(fn ($a, $i) => ($letters[$i] ?? '') . '. ' . $a->link_bukti)->implode($separator)
-                : '-';
-            $keterangan = $attachments->isNotEmpty()
-                ? $attachments->values()->map(fn ($a, $i) => ($letters[$i] ?? '') . '. ' . $a->keterangan)->implode($separator)
-                : '-';
-        } else {
-            $deskriptorText = strip_tags($row['standard']->deskriptor);
-            $keywordsText = $row['standard']->keywords;
-            $linkBukti = $attachments->first()?->link_bukti ?? '-';
-            $keterangan = $attachments->first()?->keterangan ?? '-';
-        }
-
-        return [
-            $row['standard']->nomor,
-            $deskriptorText,
-            $keywordsText,
-            $row['prodi']?->programstudi ?? '-',
-            $linkBukti,
-            $keterangan,
-            $scoreText,
-            $row['auditscore']?->notes ?? '-',
-        ];
-    }
-
     public function styles(Worksheet $sheet): array
     {
-        $lastRow = $this->rows->count() + 1;
+        $lastRow = $this->totalRows;
 
-        // Wrap text for all data cells so newlines render
-        $sheet->getStyle("A2:H{$lastRow}")->getAlignment()->setWrapText(true);
-        $sheet->getStyle("A2:H{$lastRow}")->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP);
+        $sheet->getStyle("A2:H{$lastRow}")
+            ->getAlignment()
+            ->setWrapText(true)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+
+        // Thin borders for all data
+        $sheet->getStyle("A1:H{$lastRow}")->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => 'CCCCCC'],
+                ],
+            ],
+        ]);
 
         return [
             1 => [
                 'font' => ['bold' => true],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => 'FFC107'],
+                ],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
                 ],
             ],
         ];
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                foreach ($this->mergeRanges as $range) {
+                    $sheet->mergeCells($range);
+                }
+            },
+        ];
+    }
+
+    protected function addMerges(int $startRow, int $endRow, array $columns): void
+    {
+        if ($startRow >= $endRow) {
+            return;
+        }
+        foreach ($columns as $col) {
+            $this->mergeRanges[] = "{$col}{$startRow}:{$col}{$endRow}";
+        }
     }
 }
