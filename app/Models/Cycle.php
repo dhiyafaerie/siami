@@ -17,6 +17,17 @@ class Cycle extends Model
         'is_locked' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (Cycle $cycle) {
+            if ($cycle->is_active) {
+                static::where('is_active', true)
+                    ->when($cycle->exists, fn ($q) => $q->where('id', '!=', $cycle->id))
+                    ->update(['is_active' => false]);
+            }
+        });
+    }
+
     public function isLocked(): bool
     {
         return (bool) $this->is_locked;

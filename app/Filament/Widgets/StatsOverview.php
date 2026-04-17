@@ -27,13 +27,19 @@ class StatsOverview extends BaseWidget
         if ($user->prodi->isNotEmpty()) {
             $currentProdiId = $user->prodi->first()->id;
             $activeCycle = Cycle::where('is_active', true)->first();
-            $totalStandar = $activeCycle ? Standard::where('cycles_id', $activeCycle->id)->count() : 0;
-            $sudahUpload = Prodiattachment::where('prodis_id', $currentProdiId)->count();
+            $activeCycleStandardIds = $activeCycle
+                ? Standard::where('cycles_id', $activeCycle->id)->pluck('id')
+                : collect();
+            $totalStandar = $activeCycleStandardIds->count();
+            $sudahUpload = Prodiattachment::where('prodis_id', $currentProdiId)
+                ->whereIn('standards_id', $activeCycleStandardIds)->count();
             $belumUpload = max(0, $totalStandar - $sudahUpload);
-            $avgScore = Auditscore::where('prodis_id', $currentProdiId)->avg('score');
+            $avgScore = Auditscore::where('prodis_id', $currentProdiId)
+                ->whereIn('standards_id', $activeCycleStandardIds)->avg('score');
             $persen = $totalStandar > 0 ? round(($sudahUpload / $totalStandar) * 100) : 0;
 
             $uploadChart = Prodiattachment::where('prodis_id', $currentProdiId)
+                ->whereIn('standards_id', $activeCycleStandardIds)
                 ->selectRaw('DATE(created_at) as date, COUNT(*) as total')
                 ->groupBy('date')->orderBy('date')->limit(7)
                 ->pluck('total')->toArray();
@@ -63,11 +69,18 @@ class StatsOverview extends BaseWidget
         // Auditor user
         if ($user->hasRole('auditor')) {
             $prodiDitugaskan = Auditor::where('users_id', $user->id)->count();
-            $standarDinilai = Auditscore::where('auditors_id', $user->id)->distinct('standards_id')->count('standards_id');
-            $totalKts = Nonconformity::where('auditors_id', $user->id)->count();
             $activeCycle = Cycle::where('is_active', true)->first();
+            $activeCycleStandardIds = $activeCycle
+                ? Standard::where('cycles_id', $activeCycle->id)->pluck('id')
+                : collect();
+            $standarDinilai = Auditscore::where('auditors_id', $user->id)
+                ->whereIn('standards_id', $activeCycleStandardIds)
+                ->distinct('standards_id')->count('standards_id');
+            $totalKts = Nonconformity::where('auditors_id', $user->id)
+                ->whereIn('standards_id', $activeCycleStandardIds)->count();
 
             $scoreChart = Auditscore::where('auditors_id', $user->id)
+                ->whereIn('standards_id', $activeCycleStandardIds)
                 ->selectRaw('DATE(created_at) as date, AVG(score) as avg_score')
                 ->groupBy('date')->orderBy('date')->limit(7)
                 ->pluck('avg_score')->map(fn ($v) => round($v, 1))->toArray();
@@ -96,18 +109,18 @@ class StatsOverview extends BaseWidget
 
         // Admin / super_admin
         $activeCycle = Cycle::where('is_active', true)->first();
+        $activeCycleStandardIds = $activeCycle
+            ? Standard::where('cycles_id', $activeCycle->id)->pluck('id')
+            : collect();
         $totalProdi = Prodi::count();
         $totalFakultas = Faculty::count();
-        $totalStandar = Standard::count();
-        $totalNilai = Auditscore::count();
-        $totalKts = Nonconformity::count();
-        $prodiSudahUpload = Prodiattachment::distinct('prodis_id')->count('prodis_id');
+        $totalStandar = $activeCycleStandardIds->count();
+        $totalKts = Nonconformity::whereIn('standards_id', $activeCycleStandardIds)->count();
+        $prodiSudahUpload = Prodiattachment::whereIn('standards_id', $activeCycleStandardIds)
+            ->distinct('prodis_id')->count('prodis_id');
 
-        $nilaiChart = Auditscore::selectRaw('DATE(created_at) as date, COUNT(*) as total')
-            ->groupBy('date')->orderBy('date')->limit(7)
-            ->pluck('total')->toArray();
-
-        $ktsChart = Nonconformity::selectRaw('DATE(created_at) as date, COUNT(*) as total')
+        $ktsChart = Nonconformity::whereIn('standards_id', $activeCycleStandardIds)
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as total')
             ->groupBy('date')->orderBy('date')->limit(7)
             ->pluck('total')->toArray();
 
@@ -118,14 +131,9 @@ class StatsOverview extends BaseWidget
                 ->color('success'),
 
             Stat::make('Total Standar', $totalStandar . ' Standar')
-                ->description('Semua siklus audit')
+                ->description('Siklus aktif')
                 ->chart([intval($totalStandar * 0.5), intval($totalStandar * 0.75), $totalStandar])
                 ->color('info'),
-
-            Stat::make('Nilai Masuk', $totalNilai . ' Penilaian')
-                ->description('Total nilai yang telah diberikan')
-                ->chart(count($nilaiChart) > 1 ? $nilaiChart : [0, intval($totalNilai * 0.5), $totalNilai])
-                ->color('warning'),
 
             Stat::make('Total KTS', $totalKts . ' Temuan')
                 ->description('Ketidaksesuaian seluruh prodi')

@@ -22,9 +22,11 @@ class FakultasSheet implements FromArray, WithTitle, WithHeadings, ShouldAutoSiz
     protected array $mergeRanges = [];
     protected int $totalRows = 0;
 
-    public function __construct(protected Faculty $faculty)
+    public function __construct(protected Faculty $faculty, protected ?int $prodiId = null)
     {
-        $prodiIds = $faculty->prodis()->pluck('id');
+        $prodiIds = $this->prodiId
+            ? collect([$this->prodiId])
+            : $faculty->prodis()->pluck('id');
         $letters = range('A', 'Z');
 
         $standards = Standard::with([
@@ -46,7 +48,7 @@ class FakultasSheet implements FromArray, WithTitle, WithHeadings, ShouldAutoSiz
 
             if ($prodis->isEmpty()) {
                 if ($hasMultiple) {
-                    $deskParts = preg_split('/\s*(?=[B-Z]\.\s)/', strip_tags($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY);
+                    $deskParts = preg_split('/\s*(?=[B-Z]\.\s)/', Standard::htmlToPlainText($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY);
                     $startRow = $currentRow;
 
                     foreach ($keywords as $i => $kw) {
@@ -65,7 +67,7 @@ class FakultasSheet implements FromArray, WithTitle, WithHeadings, ShouldAutoSiz
                     $this->data[] = [
                         '-',
                         $standard->nomor,
-                        strip_tags($standard->deskriptor),
+                        Standard::htmlToPlainText($standard->deskriptor),
                         $standard->keywords,
                         '-', '-', '-', '-',
                     ];
@@ -79,15 +81,15 @@ class FakultasSheet implements FromArray, WithTitle, WithHeadings, ShouldAutoSiz
                 $score = $standard->auditscore->where('prodis_id', $prodi->id)->first();
 
                 $scoreText = match ($score?->score) {
-                    1 => '1 - Kurang Cukup',
-                    2 => '2 - Kurang',
-                    3 => '3 - Cukup',
-                    4 => '4 - Sangat Cukup',
+                    1 => '1 - Kurang',
+                    2 => '2 - Cukup',
+                    3 => '3 - Baik',
+                    4 => '4 - Sangat Baik',
                     default => '-',
                 };
 
                 if ($hasMultiple) {
-                    $deskParts = preg_split('/\s*(?=[B-Z]\.\s)/', strip_tags($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY);
+                    $deskParts = preg_split('/\s*(?=[B-Z]\.\s)/', Standard::htmlToPlainText($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY);
                     $startRow = $currentRow;
 
                     foreach ($keywords as $i => $kw) {
@@ -111,7 +113,7 @@ class FakultasSheet implements FromArray, WithTitle, WithHeadings, ShouldAutoSiz
                     $this->data[] = [
                         $prodi->programstudi ?? '-',
                         $standard->nomor,
-                        strip_tags($standard->deskriptor),
+                        Standard::htmlToPlainText($standard->deskriptor),
                         $standard->keywords,
                         $attachments->first()?->link_bukti ?? '-',
                         $attachments->first()?->keterangan ?? '-',
@@ -158,6 +160,11 @@ class FakultasSheet implements FromArray, WithTitle, WithHeadings, ShouldAutoSiz
             ->getAlignment()
             ->setWrapText(true)
             ->setVertical(Alignment::VERTICAL_CENTER);
+
+        // No. Standar column (B) — left-aligned
+        $sheet->getStyle("B2:B{$lastRow}")
+            ->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
         $sheet->getStyle("A1:H{$lastRow}")->applyFromArray([
             'borders' => [

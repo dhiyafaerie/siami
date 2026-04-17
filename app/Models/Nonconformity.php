@@ -81,4 +81,23 @@ class Nonconformity extends Model
             default                      => 'gray',
         };
     }
+
+    public static function kategoriOptions(): array
+    {
+        return [
+            'Mayor'     => 'Mayor',
+            'Minor'     => 'Minor',
+            'Observasi' => 'Observasi',
+        ];
+    }
+
+    public static function kategoriColor(?string $kategori): string
+    {
+        return match (strtolower($kategori ?? '')) {
+            'mayor'              => 'danger',
+            'minor'              => 'warning',
+            'observasi', 'ob'    => 'info',
+            default              => 'gray',
+        };
+    }
 }

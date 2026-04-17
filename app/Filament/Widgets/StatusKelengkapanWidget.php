@@ -32,7 +32,7 @@ class StatusKelengkapanWidget extends BaseWidget
         return $table
             ->query(
                 Standard::query()
-                    ->when($activeCycleId, fn ($q) => $q->where('cycles_id', $activeCycleId))
+                    ->where('cycles_id', $activeCycleId ?? 0)
                     ->with([
                         'prodiattachment' => fn ($q) => $q->where('prodis_id', $currentProdiId),
                         'auditscore' => fn ($q) => $q->where('prodis_id', $currentProdiId),
@@ -95,24 +95,29 @@ class StatusKelengkapanWidget extends BaseWidget
                     ->alignCenter()
                     ->badge()
                     ->state(function (Standard $record) {
-                        $score = $record->auditscore->first();
-                        if (!$score) return '-';
-                        return match ($score->score) {
-                            1 => '1 - Kurang Cukup',
-                            2 => '2 - Kurang',
-                            3 => '3 - Cukup',
-                            4 => '4 - Sangat Cukup',
-                            default => '-',
+                        $scores = $record->auditscore->sortBy('keyword_index');
+                        if ($scores->isEmpty()) return '-';
+                        $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
+                        $hasMultiple = count($keywords) > 1;
+                        $letters = range('A', 'Z');
+                        $scoreLabel = fn ($v) => match ($v) {
+                            1 => '1 - Kurang', 2 => '2 - Cukup',
+                            3 => '3 - Baik', 4 => '4 - Sangat Baik', default => '-',
                         };
+                        if (!$hasMultiple) return $scoreLabel($scores->first()->score);
+                        return $scores->values()->map(fn ($s, $i) =>
+                            ($letters[$s->keyword_index ?? $i] ?? '') . '. ' . $scoreLabel($s->score)
+                        )->implode(' | ');
                     })
                     ->color(function (Standard $record) {
-                        $score = $record->auditscore->first()?->score;
-                        return match ($score) {
-                            1 => 'danger',
-                            2 => 'warning',
-                            3 => 'info',
-                            4 => 'success',
-                            default => 'gray',
+                        $scores = $record->auditscore;
+                        if ($scores->isEmpty()) return 'gray';
+                        $avg = $scores->avg('score');
+                        return match (true) {
+                            $avg >= 3.5 => 'success',
+                            $avg >= 2.5 => 'info',
+                            $avg >= 1.5 => 'warning',
+                            default     => 'danger',
                         };
                     }),
             ])

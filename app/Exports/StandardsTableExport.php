@@ -40,7 +40,7 @@ class StandardsTableExport implements FromArray, WithHeadings, WithStyles, Shoul
 
             if ($prodis->isEmpty()) {
                 if ($hasMultiple) {
-                    $deskParts = preg_split('/\s*(?=[B-Z]\.\s)/', strip_tags($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY);
+                    $deskParts = preg_split('/\s*(?=[B-Z]\.\s)/', Standard::htmlToPlainText($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY);
                     $startRow = $currentRow;
 
                     foreach ($keywords as $i => $kw) {
@@ -61,7 +61,7 @@ class StandardsTableExport implements FromArray, WithHeadings, WithStyles, Shoul
                 } else {
                     $this->data[] = [
                         $standard->nomor,
-                        strip_tags($standard->deskriptor),
+                        Standard::htmlToPlainText($standard->deskriptor),
                         $standard->keywords,
                         '-', '-', '-', '-', '-',
                     ];
@@ -80,15 +80,15 @@ class StandardsTableExport implements FromArray, WithHeadings, WithStyles, Shoul
                     ->first();
 
                 $scoreText = match ($score?->score) {
-                    1 => '1 - Kurang Cukup',
-                    2 => '2 - Kurang',
-                    3 => '3 - Cukup',
-                    4 => '4 - Sangat Cukup',
+                    1 => '1 - Kurang',
+                    2 => '2 - Cukup',
+                    3 => '3 - Baik',
+                    4 => '4 - Sangat Baik',
                     default => '-',
                 };
 
                 if ($hasMultiple) {
-                    $deskParts = preg_split('/\s*(?=[B-Z]\.\s)/', strip_tags($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY);
+                    $deskParts = preg_split('/\s*(?=[B-Z]\.\s)/', Standard::htmlToPlainText($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY);
                     $startRow = $currentRow;
 
                     foreach ($keywords as $i => $kw) {
@@ -111,7 +111,7 @@ class StandardsTableExport implements FromArray, WithHeadings, WithStyles, Shoul
                 } else {
                     $this->data[] = [
                         $standard->nomor,
-                        strip_tags($standard->deskriptor),
+                        Standard::htmlToPlainText($standard->deskriptor),
                         $standard->keywords,
                         $prodi->programstudi ?? '-',
                         $attachments->first()?->link_bukti ?? '-',
@@ -154,6 +154,11 @@ class StandardsTableExport implements FromArray, WithHeadings, WithStyles, Shoul
             ->getAlignment()
             ->setWrapText(true)
             ->setVertical(Alignment::VERTICAL_CENTER);
+
+        // No. Standar column (A) — left-aligned
+        $sheet->getStyle("A2:A{$lastRow}")
+            ->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
         // Thin borders for all data
         $sheet->getStyle("A1:H{$lastRow}")->applyFromArray([

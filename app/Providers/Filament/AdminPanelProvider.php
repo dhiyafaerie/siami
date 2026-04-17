@@ -57,6 +57,11 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->databaseNotifications()
+            ->navigationGroups([
+                'AMI',
+                'Laporan',
+                'User Management',
+            ])
             ->sidebarCollapsibleOnDesktop()
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->assets([

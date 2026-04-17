@@ -35,7 +35,7 @@
 
     <div class="meta">
         Fakultas: {{ $prodi->faculty?->fakultas ?? '-' }} &nbsp;|&nbsp;
-        Jenjang: {{ $prodi->jenjang ?? '-' }} &nbsp;|&nbsp;
+        Jenjang: {{ $prodi->jenjang ? ucfirst($prodi->jenjang) : '-' }} &nbsp;|&nbsp;
         Digenerate: {{ $generatedAt }}
     </div>
 
@@ -59,19 +59,22 @@
                     $keywords = array_filter(array_map('trim', explode(',', $standard->keywords ?? '')));
                     $hasMultiple = count($keywords) > 1;
                     $letters = range('A', 'Z');
-                    $score = $standard->auditscore->first();
+                    $scoreMap = $standard->auditscore->keyBy(fn ($s) => $s->keyword_index ?? 0);
+                    $plainDesk = \App\Models\Standard::htmlToPlainText($standard->deskriptor);
                     $deskParts = $hasMultiple
-                        ? preg_split('/\s*(?=[B-Z]\.\s)/', strip_tags($standard->deskriptor), -1, PREG_SPLIT_NO_EMPTY)
-                        : [strip_tags($standard->deskriptor)];
+                        ? preg_split('/\s*(?=[B-Z]\.\s)/', $plainDesk, -1, PREG_SPLIT_NO_EMPTY)
+                        : [$plainDesk];
                     $subCount = $hasMultiple ? count($keywords) : 1;
+                    $scoreLabel = fn ($s) => match ($s) { 1 => 'Kurang', 2 => 'Cukup', 3 => 'Baik', 4 => 'Sangat Baik', default => 'N/A' };
                 @endphp
                 @if($hasMultiple)
                     @foreach($keywords as $i => $kw)
+                        @php $scoreRow = $scoreMap->get($i); @endphp
                         <tr>
                             @if($i === 0)
                                 <td rowspan="{{ $subCount }}" style="vertical-align:middle">{{ $standard->nomor }}</td>
                             @endif
-                            <td>{{ trim($deskParts[$i] ?? '') }}</td>
+                            <td>{!! nl2br(e(trim($deskParts[$i] ?? ''))) !!}</td>
                             <td>{{ trim($kw) }}</td>
                             <td>
                                 @if(isset($attachments[$i]))
@@ -81,25 +84,23 @@
                                 @endif
                             </td>
                             <td>{{ $attachments[$i]->keterangan ?? '-' }}</td>
-                            @if($i === 0)
-                                <td rowspan="{{ $subCount }}" style="vertical-align:middle">
-                                    @if($score)
-                                        <span class="badge badge-{{ $score->score }}">
-                                            {{ $score->score }} -
-                                            {{ match($score->score) { 1 => 'Kurang Cukup', 2 => 'Kurang', 3 => 'Cukup', 4 => 'Sangat Cukup', default => 'N/A' } }}
-                                        </span>
-                                    @else
-                                        <span class="badge badge-none">Belum Dinilai</span>
-                                    @endif
-                                </td>
-                                <td rowspan="{{ $subCount }}" style="vertical-align:middle">{{ $score?->notes ?? '-' }}</td>
-                            @endif
+                            <td style="vertical-align:middle">
+                                @if($scoreRow)
+                                    <span class="badge badge-{{ $scoreRow->score }}">
+                                        {{ $scoreRow->score }} - {{ $scoreLabel($scoreRow->score) }}
+                                    </span>
+                                @else
+                                    <span class="badge badge-none">Belum Dinilai</span>
+                                @endif
+                            </td>
+                            <td style="vertical-align:middle">{{ $scoreRow?->notes ?? '-' }}</td>
                         </tr>
                     @endforeach
                 @else
+                    @php $scoreRow = $scoreMap->first(); @endphp
                     <tr>
                         <td>{{ $standard->nomor }}</td>
-                        <td>{{ strip_tags($standard->deskriptor) }}</td>
+                        <td>{!! nl2br(e(\App\Models\Standard::htmlToPlainText($standard->deskriptor))) !!}</td>
                         <td>{{ $standard->keywords }}</td>
                         <td>
                             @if($attachments->isNotEmpty())
@@ -110,16 +111,15 @@
                         </td>
                         <td>{{ $attachments->first()?->keterangan ?? '-' }}</td>
                         <td>
-                            @if($score)
-                                <span class="badge badge-{{ $score->score }}">
-                                    {{ $score->score }} -
-                                    {{ match($score->score) { 1 => 'Kurang Cukup', 2 => 'Kurang', 3 => 'Cukup', 4 => 'Sangat Cukup', default => 'N/A' } }}
+                            @if($scoreRow)
+                                <span class="badge badge-{{ $scoreRow->score }}">
+                                    {{ $scoreRow->score }} - {{ $scoreLabel($scoreRow->score) }}
                                 </span>
                             @else
                                 <span class="badge badge-none">Belum Dinilai</span>
                             @endif
                         </td>
-                        <td>{{ $score?->notes ?? '-' }}</td>
+                        <td>{{ $scoreRow?->notes ?? '-' }}</td>
                     </tr>
                 @endif
             @empty
@@ -133,10 +133,11 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width:8%">No.</th>
-                    <th style="width:15%">Kode KTS</th>
-                    <th style="width:15%">Standar</th>
-                    <th style="width:62%">Deskripsi</th>
+                    <th style="width:6%">No.</th>
+                    <th style="width:13%">Kode KTS</th>
+                    <th style="width:12%">Kategori</th>
+                    <th style="width:12%">Standar</th>
+                    <th style="width:57%">Deskripsi</th>
                 </tr>
             </thead>
             <tbody>
@@ -144,6 +145,7 @@
                     <tr>
                         <td>{{ $i + 1 }}</td>
                         <td>{{ $kts->kts }}</td>
+                        <td>{{ $kts->kategori ?? '-' }}</td>
                         <td>{{ $kts->standard?->nomor ?? '-' }}</td>
                         <td>{{ $kts->description ?? $kts->kts }}</td>
                     </tr>

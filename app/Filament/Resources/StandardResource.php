@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\StandardResource\Pages;
 use App\Filament\Resources\StandardResource\RelationManagers;
+use App\Models\Cycle;
 use App\Models\Standard;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -55,13 +56,14 @@ class StandardResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('nomor')
-                    ->searchable(),
+                    ->searchable()
+                    ->alignStart(),
                 Tables\Columns\TextColumn::make('deskriptor')
                     ->wrap()
                     ->html()
                     ->searchable()
                     ->state(function ($record) {
-                        $text = strip_tags($record->deskriptor);
+                        $text = Standard::htmlToPlainText($record->deskriptor);
                         $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
                         if (count($keywords) > 1) {
                             $text = preg_replace('/\s*([B-Z])\.\s/', '<hr style="border-top:1px solid #d1d5db;margin:6px 0"><strong>$1.</strong> ', $text);
@@ -69,7 +71,7 @@ class StandardResource extends Resource
                                 $text = '<strong>A.</strong> ' . substr($text, 3);
                             }
                         }
-                        return $text;
+                        return nl2br($text);
                     }),
                 Tables\Columns\TextColumn::make('keywords')
                     ->searchable()
@@ -85,7 +87,8 @@ class StandardResource extends Resource
                             '<strong>' . ($letters[$i] ?? '') . '.</strong> ' . e(trim($kw))
                         )->implode('<hr style="border-top:1px solid #d1d5db;margin:6px 0">');
                     }),
-                Tables\Columns\TextColumn::make('cycle.name'),
+                Tables\Columns\TextColumn::make('cycle.name')
+                    ->label("Siklus"),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -96,7 +99,11 @@ class StandardResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('cycles_id')
+                    ->label('Siklus')
+                    ->options(Cycle::orderByDesc('year')->pluck('name', 'id'))
+                    ->default(Cycle::where('is_active', true)->value('id'))
+                    ->placeholder('Semua Siklus'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

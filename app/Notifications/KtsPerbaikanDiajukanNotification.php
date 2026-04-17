@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Nonconformity;
+use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -19,10 +20,11 @@ class KtsPerbaikanDiajukanNotification extends Notification
 
     public function toDatabase(object $notifiable): array
     {
-        return [
-            'message' => "Prodi \"{$this->kts->prodi?->programstudi}\" telah mengajukan tindakan perbaikan untuk KTS {$this->kts->kts}. Silakan verifikasi.",
-            'nonconformity_id' => $this->kts->id,
-            'kts' => $this->kts->kts,
-        ];
+        return FilamentNotification::make()
+            ->title('Tindakan Perbaikan Diajukan')
+            ->body("Prodi \"{$this->kts->prodi?->programstudi}\" telah mengajukan tindakan perbaikan untuk KTS {$this->kts->kts}. Silakan verifikasi.")
+            ->icon('heroicon-o-arrow-path')
+            ->iconColor('warning')
+            ->getDatabaseMessage();
     }
 }

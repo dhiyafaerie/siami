@@ -14,7 +14,7 @@ class MultiCycleComparison extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
     protected static ?string $navigationLabel = 'Perbandingan Siklus';
-    protected static ?string $navigationGroup = 'AMI';
+    protected static ?string $navigationGroup = 'Laporan';
     protected static ?string $title = 'Perbandingan Siklus';
     protected static string $view = 'filament.pages.multi-cycle-comparison';
 

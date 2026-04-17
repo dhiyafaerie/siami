@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Cycle;
+use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -19,9 +20,13 @@ class DeadlineReminderNotification extends Notification
 
     public function toDatabase(object $notifiable): array
     {
-        return [
-            'message' => "Pengingat: Batas akhir pengumpulan dokumen siklus \"{$this->cycle->name}\" adalah " . \Carbon\Carbon::parse($this->cycle->end_date)->format('d M Y') . '.',
-            'cycles_id' => $this->cycle->id,
-        ];
+        $endDate = \Carbon\Carbon::parse($this->cycle->end_date)->format('d M Y');
+
+        return FilamentNotification::make()
+            ->title('Pengingat Deadline')
+            ->body("Batas akhir pengumpulan dokumen siklus \"{$this->cycle->name}\" adalah {$endDate}.")
+            ->icon('heroicon-o-clock')
+            ->iconColor('warning')
+            ->getDatabaseMessage();
     }
 }

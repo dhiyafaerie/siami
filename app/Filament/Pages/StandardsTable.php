@@ -11,7 +11,11 @@ use App\Models\Auditscore;
 use App\Exports\StandardsTableExport;
 use App\Exports\FakultasRekapExport;
 use App\Models\Nonconformity;
+use App\Models\Auditor;
+use App\Models\User;
 use App\Notifications\AuditScoreSavedNotification;
+use App\Notifications\BuktiDiuploadNotification;
+use App\Notifications\KtsDibuatNotification;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Forms;
@@ -23,6 +27,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Notifications\Notification;
 use Filament\Actions\Action;
 use Maatwebsite\Excel\Facades\Excel;
+use Spatie\Activitylog\Models\Activity;
 
 class StandardsTable extends Page implements HasTable
 {
@@ -38,10 +43,12 @@ class StandardsTable extends Page implements HasTable
     protected function getHeaderActions(): array
     {
         $user = Auth::user();
-        $user->loadMissing('faculty');
+        $user->loadMissing('faculty', 'prodi');
         $isAuditor  = $user->hasRole('auditor');
         $isAdmin    = $user->hasRole('admin') || $user->hasRole('super_admin');
         $isFakultas = $user->faculty !== null;
+        $isProdi    = $user->prodi->isNotEmpty();
+        $userProdi  = $isProdi ? $user->prodi->first() : null;
         $fakultasProdiOptions = $isFakultas
             ? Prodi::where('faculties_id', $user->faculty->id)->pluck('programstudi', 'id')
             : Prodi::pluck('programstudi', 'id');
@@ -53,11 +60,82 @@ class StandardsTable extends Page implements HasTable
                 ->visible($isAuditor)
                 ->action(fn () => Excel::download(new StandardsTableExport, 'tabel-kompilasi-' . now()->format('Y-m-d') . '.xlsx')),
 
-            Action::make('export_rekap_fakultas')
-                ->label('Rekap per Fakultas')
-                ->icon('heroicon-o-building-library')
+            Action::make('export_excel_fakultas')
+                ->label('Export Excel')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->visible($isFakultas && !$isAdmin && !$isAuditor)
+                ->form([
+                    Forms\Components\Select::make('prodis_id')
+                        ->label('Program Studi')
+                        ->options($fakultasProdiOptions)
+                        ->searchable()
+                        ->placeholder('Semua Program Studi')
+                        ->nullable(),
+                ])
+                ->action(function (array $data) use ($user) {
+                    $prodiId = $data['prodis_id'] ?? null;
+                    $filename = $prodiId
+                        ? 'rekap-' . str(Prodi::find($prodiId)->programstudi)->slug() . '-' . now()->format('Y-m-d') . '.xlsx'
+                        : 'rekap-' . str($user->faculty->fakultas)->slug() . '-' . now()->format('Y-m-d') . '.xlsx';
+
+                    return Excel::download(
+                        new FakultasRekapExport($user->faculty->id, $prodiId),
+                        $filename
+                    );
+                }),
+
+            Action::make('export_excel_admin')
+                ->label('Export Excel')
+                ->icon('heroicon-o-arrow-down-tray')
                 ->visible($isAdmin)
-                ->action(fn () => Excel::download(new FakultasRekapExport, 'rekap-fakultas-' . now()->format('Y-m-d') . '.xlsx')),
+                ->form([
+                    Forms\Components\Select::make('faculties_id')
+                        ->label('Fakultas')
+                        ->options(\App\Models\Faculty::pluck('fakultas', 'id'))
+                        ->searchable()
+                        ->placeholder('Semua Fakultas')
+                        ->reactive()
+                        ->nullable(),
+
+                    Forms\Components\Select::make('prodis_id')
+                        ->label('Program Studi')
+                        ->options(fn (Forms\Get $get) => $get('faculties_id')
+                            ? Prodi::where('faculties_id', $get('faculties_id'))->pluck('programstudi', 'id')
+                            : Prodi::pluck('programstudi', 'id'))
+                        ->searchable()
+                        ->placeholder('Semua Program Studi')
+                        ->nullable(),
+                ])
+                ->action(function (array $data) {
+                    $facultyId = $data['faculties_id'] ?? null;
+                    $prodiId = $data['prodis_id'] ?? null;
+
+                    if ($prodiId) {
+                        $prodi = Prodi::find($prodiId);
+                        $filename = 'rekap-' . str($prodi->programstudi)->slug() . '-' . now()->format('Y-m-d') . '.xlsx';
+                        return Excel::download(new FakultasRekapExport($prodi->faculties_id, $prodiId), $filename);
+                    }
+
+                    if ($facultyId) {
+                        $faculty = \App\Models\Faculty::find($facultyId);
+                        $filename = 'rekap-' . str($faculty->fakultas)->slug() . '-' . now()->format('Y-m-d') . '.xlsx';
+                        return Excel::download(new FakultasRekapExport($facultyId), $filename);
+                    }
+
+                    return Excel::download(new FakultasRekapExport, 'rekap-semua-fakultas-' . now()->format('Y-m-d') . '.xlsx');
+                }),
+
+            Action::make('export_excel_prodi')
+                ->label('Export Excel')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->visible($isProdi && !$isAdmin && !$isAuditor && !$isFakultas)
+                ->action(function () use ($userProdi) {
+                    $filename = 'rekap-' . str($userProdi->programstudi)->slug() . '-' . now()->format('Y-m-d') . '.xlsx';
+                    return Excel::download(
+                        new FakultasRekapExport($userProdi->faculties_id, $userProdi->id),
+                        $filename
+                    );
+                }),
 
             Action::make('export_pdf')
                 ->label('Export PDF')
@@ -73,6 +151,62 @@ class StandardsTable extends Page implements HasTable
                 ->action(function (array $data) {
                     $cycle = Cycle::where('is_active', true)->first();
                     $url = route('pdf.prodi', ['prodi' => $data['prodis_id'], 'cycle' => $cycle?->id]);
+                    $this->redirect($url, navigate: false);
+                }),
+
+            Action::make('export_pdf_prodi')
+                ->label('Export PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->visible($isProdi && !$isAdmin && !$isAuditor && !$isFakultas)
+                ->action(function () use ($userProdi) {
+                    $cycle = Cycle::where('is_active', true)->first();
+                    $url = route('pdf.prodi', ['prodi' => $userProdi->id, 'cycle' => $cycle?->id]);
+                    $this->redirect($url, navigate: false);
+                }),
+
+            Action::make('laporan_ami_pdf')
+                ->label('Export PDF 2')
+                ->icon('heroicon-o-document-text')
+                ->color('primary')
+                ->visible($isAuditor || $isAdmin || $isFakultas)
+                ->form([
+                    Forms\Components\Select::make('cycles_id')
+                        ->label('Siklus')
+                        ->options(Cycle::orderByDesc('year')->pluck('name', 'id'))
+                        ->default(fn () => Cycle::where('is_active', true)->first()?->id)
+                        ->required(),
+
+                    Forms\Components\Select::make('prodis_id')
+                        ->label('Program Studi')
+                        ->options($fakultasProdiOptions)
+                        ->searchable()
+                        ->required(),
+                ])
+                ->action(function (array $data) {
+                    $url = route('pdf.laporan-ami', [
+                        'prodi' => $data['prodis_id'],
+                        'cycle' => $data['cycles_id'],
+                    ]);
+                    $this->redirect($url, navigate: false);
+                }),
+
+            Action::make('laporan_ami_pdf_prodi')
+                ->label('Export PDF 2')
+                ->icon('heroicon-o-document-text')
+                ->color('primary')
+                ->visible($isProdi && !$isAdmin && !$isAuditor && !$isFakultas)
+                ->form([
+                    Forms\Components\Select::make('cycles_id')
+                        ->label('Siklus')
+                        ->options(Cycle::orderByDesc('year')->pluck('name', 'id'))
+                        ->default(fn () => Cycle::where('is_active', true)->first()?->id)
+                        ->required(),
+                ])
+                ->action(function (array $data) use ($userProdi) {
+                    $url = route('pdf.laporan-ami', [
+                        'prodi' => $userProdi->id,
+                        'cycle' => $data['cycles_id'],
+                    ]);
                     $this->redirect($url, navigate: false);
                 }),
         ];
@@ -94,12 +228,11 @@ class StandardsTable extends Page implements HasTable
             : null;
 
         $activeCycle = Cycle::where('is_active', true)->first();
-        $isLocked = $activeCycle?->is_locked ?? false;
 
         return $table
             ->query(function () use ($isProdi, $currentProdiId, $isAuditor, $isFakultas, $fakultasProdiIds) {
                 $query = Standard::query()
-                    ->with(['prodiattachment' => function ($query) use ($isProdi, $currentProdiId, $isFakultas, $fakultasProdiIds) {
+                    ->with(['cycle', 'prodiattachment' => function ($query) use ($isProdi, $currentProdiId, $isFakultas, $fakultasProdiIds) {
                         if ($isProdi) {
                             $query->where('prodis_id', $currentProdiId)
                                 ->where('users_id', Auth::id());
@@ -128,10 +261,12 @@ class StandardsTable extends Page implements HasTable
                     ->label('Siklus')
                     ->options(Cycle::pluck('name', 'id'))
                     ->default($activeCycle?->id)
-                    ->placeholder('Semua Siklus')
-                    ->query(function (Builder $query, array $data) {
+                    ->placeholder($isProdi ? 'Pilih Siklus' : 'Semua Siklus')
+                    ->query(function (Builder $query, array $data) use ($isProdi) {
                         if (!empty($data['value'])) {
                             $query->where('cycles_id', $data['value']);
+                        } elseif ($isProdi) {
+                            $query->whereRaw('0 = 1');
                         }
                     }),
 
@@ -159,14 +294,15 @@ class StandardsTable extends Page implements HasTable
             ->columns([
                 Tables\Columns\TextColumn::make('nomor')
                     ->searchable()
-                    ->width('80px'),
+                    ->width('80px')
+                    ->alignStart(),
 
                 Tables\Columns\TextColumn::make('deskriptor')
                     ->wrap()
                     ->html()
                     ->searchable()
                     ->state(function ($record) {
-                        $text = strip_tags($record->deskriptor);
+                        $text = Standard::htmlToPlainText($record->deskriptor);
                         $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
                         if (count($keywords) > 1) {
                             $text = preg_replace('/\s*([B-Z])\.\s/', '<hr style="border-top:1px solid #d1d5db;margin:6px 0"><strong>$1.</strong> ', $text);
@@ -174,9 +310,9 @@ class StandardsTable extends Page implements HasTable
                                 $text = '<strong>A.</strong> ' . substr($text, 3);
                             }
                         }
-                        return $text;
+                        return nl2br($text);
                     })
-                    ->tooltip(fn ($record) => strip_tags($record->deskriptor)),
+                    ->tooltip(fn ($record) => Standard::htmlToPlainText($record->deskriptor)),
 
                 Tables\Columns\TextColumn::make('keywords')
                     ->searchable()
@@ -254,17 +390,26 @@ class StandardsTable extends Page implements HasTable
                     ->state(function ($record, $livewire) {
                         $filterValue = $livewire->tableFilters['prodi_id']['value'] ?? null;
                         $scores = $record->auditscore
-                            ->when($filterValue, fn ($c) => $c->where('prodis_id', $filterValue));
+                            ->when($filterValue, fn ($c) => $c->where('prodis_id', $filterValue))
+                            ->sortBy('keyword_index');
 
-                        return $scores->map(function ($score) {
-                            return match ($score->score) {
-                                1 => '1 - Kurang Cukup',
-                                2 => '2 - Kurang',
-                                3 => '3 - Cukup',
-                                4 => '4 - Sangat Cukup',
-                                default => 'N/A'
-                            };
-                        })->implode('<br>');
+                        $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
+                        $hasMultiple = count($keywords) > 1;
+                        $letters = range('A', 'Z');
+                        $separator = $hasMultiple ? '<hr style="border-top:1px solid #d1d5db;margin:6px 0">' : '<br>';
+
+                        $scoreLabel = fn ($v) => match ($v) {
+                            1 => '1 - Kurang',
+                            2 => '2 - Cukup',
+                            3 => '3 - Baik',
+                            4 => '4 - Sangat Baik',
+                            default => 'N/A',
+                        };
+
+                        return $scores->values()->map(function ($score, $i) use ($hasMultiple, $letters, $scoreLabel) {
+                            $prefix = $hasMultiple ? '<strong>' . ($letters[$score->keyword_index ?? $i] ?? '') . '.</strong> ' : '';
+                            return $prefix . $scoreLabel($score->score);
+                        })->implode($separator);
                     })
                     ->html()
                     ->width($isAuditor ? '130px' : null),
@@ -275,9 +420,18 @@ class StandardsTable extends Page implements HasTable
                     ->state(function ($record, $livewire) {
                         $filterValue = $livewire->tableFilters['prodi_id']['value'] ?? null;
                         $scores = $record->auditscore
-                            ->when($filterValue, fn ($c) => $c->where('prodis_id', $filterValue));
+                            ->when($filterValue, fn ($c) => $c->where('prodis_id', $filterValue))
+                            ->sortBy('keyword_index');
 
-                        return $scores->map(fn ($score) => e($score->notes))->implode('<br>');
+                        $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
+                        $hasMultiple = count($keywords) > 1;
+                        $letters = range('A', 'Z');
+                        $separator = $hasMultiple ? '<hr style="border-top:1px solid #d1d5db;margin:6px 0">' : '<br>';
+
+                        return $scores->values()->map(function ($score, $i) use ($hasMultiple, $letters) {
+                            $prefix = $hasMultiple ? '<strong>' . ($letters[$score->keyword_index ?? $i] ?? '') . '.</strong> ' : '';
+                            return $prefix . e($score->notes);
+                        })->implode($separator);
                     })
                     ->html()
                     ->wrap()
@@ -289,7 +443,7 @@ class StandardsTable extends Page implements HasTable
                     ->label('Tambah')
                     ->icon('heroicon-o-plus')
                     ->iconButton()
-                    ->visible(fn ($record) => !$isLocked && !$isFakultas && $userProdi->isNotEmpty() && $record->prodiattachment->isEmpty())
+                    ->visible(fn ($record) => $record->cycle?->is_active && !$record->cycle?->is_locked && !$isFakultas && $userProdi->isNotEmpty() && $record->prodiattachment->isEmpty())
                     ->form(function (Standard $record) use ($userProdi) {
                         $prodi = $userProdi->first();
                         $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
@@ -342,6 +496,18 @@ class StandardsTable extends Page implements HasTable
                             ]);
                         }
 
+                        $prodi = Prodi::find($data['prodis_id']);
+                        if ($prodi) {
+                            $auditorUserIds = Auditor::where('prodis_id', $prodi->id)
+                                ->pluck('users_id')->unique();
+                            $auditors = User::whereIn('id', $auditorUserIds)->get();
+                            foreach ($auditors as $auditor) {
+                                $auditor->notify(new BuktiDiuploadNotification(
+                                    $record, $prodi, count($data['items']), false
+                                ));
+                            }
+                        }
+
                         Notification::make()
                             ->title('Data berhasil disimpan')
                             ->success()
@@ -352,8 +518,9 @@ class StandardsTable extends Page implements HasTable
                     ->label('Edit')
                     ->icon('heroicon-o-pencil')
                     ->iconButton()
-                    ->visible(fn ($record) => !$isLocked && !$isFakultas && $userProdi->isNotEmpty() && $record->prodiattachment->isNotEmpty())
-                    ->fillForm(function (Standard $record) {
+                    ->visible(fn ($record) => $record->cycle?->is_active && !$record->cycle?->is_locked && !$isFakultas && $userProdi->isNotEmpty() && $record->prodiattachment->isNotEmpty())
+                    ->fillForm(function (Standard $record) use ($userProdi) {
+                        $prodi = $userProdi->first();
                         $items = [];
                         foreach ($record->prodiattachment->values() as $index => $attachment) {
                             $items[$index] = [
@@ -361,7 +528,11 @@ class StandardsTable extends Page implements HasTable
                                 'link_bukti' => $attachment->link_bukti,
                             ];
                         }
-                        return ['items' => $items];
+                        return [
+                            'prodi_info' => $prodi?->programstudi ?? 'Not assigned',
+                            'prodis_id'  => $prodi?->id,
+                            'items'      => $items,
+                        ];
                     })
                     ->form(function (Standard $record) use ($userProdi) {
                         $prodi = $userProdi->first();
@@ -420,6 +591,18 @@ class StandardsTable extends Page implements HasTable
                             ]);
                         }
 
+                        $prodi = Prodi::find($data['prodis_id']);
+                        if ($prodi) {
+                            $auditorUserIds = Auditor::where('prodis_id', $prodi->id)
+                                ->pluck('users_id')->unique();
+                            $auditors = User::whereIn('id', $auditorUserIds)->get();
+                            foreach ($auditors as $auditor) {
+                                $auditor->notify(new BuktiDiuploadNotification(
+                                    $record, $prodi, count($data['items']), true
+                                ));
+                            }
+                        }
+
                         Notification::make()
                             ->title('Data berhasil diperbarui')
                             ->success()
@@ -430,47 +613,87 @@ class StandardsTable extends Page implements HasTable
                     ->label('Input Nilai')
                     ->icon('heroicon-o-star')
                     ->iconButton()
-                    ->visible(fn () => $isAuditor && !$isLocked)
-                    ->form(function ($livewire) {
+                    ->visible(function ($record, $livewire) use ($isAuditor) {
+                        if (!$isAuditor || !$record->cycle?->is_active || $record->cycle?->is_locked) return false;
+                        $filterValue = $livewire->tableFilters['prodi_id']['value'] ?? null;
+                        if (!$filterValue) return true;
+                        // Cek prodi sudah upload bukti untuk standar ini
+                        return Prodiattachment::where('standards_id', $record->id)
+                            ->where('prodis_id', $filterValue)->exists();
+                    })
+                    ->form(function (Standard $record, $livewire) {
                         $filterValue = $livewire->tableFilters['prodi_id']['value'] ?? null;
                         $prodi = $filterValue ? Prodi::find($filterValue) : null;
+                        $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
+                        $hasMultiple = count($keywords) > 1;
+                        $letters = range('A', 'Z');
 
-                        $formFields = [
-                            Forms\Components\Select::make('score')
-                                ->label('Nilai')
-                                ->options([
-                                    1 => '1 - Kurang Cukup',
-                                    2 => '2 - Kurang',
-                                    3 => '3 - Cukup',
-                                    4 => '4 - Sangat Cukup',
-                                ])
-                                ->required(),
-
-                            Forms\Components\Textarea::make('notes')
-                                ->label('Catatan Audit'),
+                        $scoreOptions = [
+                            1 => '1 - Kurang',
+                            2 => '2 - Cukup',
+                            3 => '3 - Baik',
+                            4 => '4 - Sangat Baik',
                         ];
 
-                        if ($filterValue) {
-                            array_unshift($formFields,
-                                Forms\Components\TextInput::make('prodi_display')
-                                    ->label('Program Studi')
-                                    ->default($prodi ? $prodi->programstudi : '')
-                                    ->disabled(),
+                        $formFields = [];
 
-                                Forms\Components\Hidden::make('prodis_id')
-                                    ->default($filterValue)
-                            );
+                        if ($filterValue) {
+                            $formFields[] = Forms\Components\TextInput::make('prodi_display')
+                                ->label('Program Studi')
+                                ->default($prodi ? $prodi->programstudi : '')
+                                ->disabled();
+                            $formFields[] = Forms\Components\Hidden::make('prodis_id')
+                                ->default($filterValue);
                         } else {
-                            array_unshift($formFields,
-                                Forms\Components\Select::make('prodis_id')
-                                    ->label('Program Studi')
-                                    ->options(Prodi::pluck('programstudi', 'id'))
-                                    ->searchable()
-                                    ->required()
-                            );
+                            $formFields[] = Forms\Components\Select::make('prodis_id')
+                                ->label('Program Studi')
+                                ->options(Prodi::pluck('programstudi', 'id'))
+                                ->searchable()
+                                ->required();
+                        }
+
+                        if ($hasMultiple) {
+                            foreach ($keywords as $index => $keyword) {
+                                $letter = $letters[$index] ?? ($index + 1);
+                                $formFields[] = Forms\Components\Section::make("{$letter}. " . ucfirst(trim($keyword)))
+                                    ->schema([
+                                        Forms\Components\Select::make("items.{$index}.score")
+                                            ->label('Nilai')
+                                            ->options($scoreOptions)
+                                            ->required(),
+                                        Forms\Components\Textarea::make("items.{$index}.notes")
+                                            ->label('Catatan Audit'),
+                                    ]);
+                            }
+                        } else {
+                            $formFields[] = Forms\Components\Select::make('items.0.score')
+                                ->label('Nilai')
+                                ->options($scoreOptions)
+                                ->required();
+                            $formFields[] = Forms\Components\Textarea::make('items.0.notes')
+                                ->label('Catatan Audit');
                         }
 
                         return $formFields;
+                    })
+                    ->fillForm(function (Standard $record, $livewire) {
+                        $filterValue = $livewire->tableFilters['prodi_id']['value'] ?? null;
+                        if (!$filterValue) return [];
+                        $prodi = Prodi::find($filterValue);
+                        $existing = Auditscore::where('standards_id', $record->id)
+                            ->where('auditors_id', Auth::id())
+                            ->where('prodis_id', $filterValue)
+                            ->get();
+                        $items = [];
+                        foreach ($existing as $score) {
+                            $idx = $score->keyword_index ?? 0;
+                            $items[$idx] = ['score' => $score->score, 'notes' => $score->notes];
+                        }
+                        return [
+                            'prodi_display' => $prodi?->programstudi ?? '',
+                            'prodis_id'     => $filterValue,
+                            'items'         => $items,
+                        ];
                     })
                     ->action(function (Standard $record, array $data) {
                         if (empty($data['prodis_id'])) {
@@ -481,22 +704,38 @@ class StandardsTable extends Page implements HasTable
                             return;
                         }
 
-                        $auditScore = Auditscore::updateOrCreate(
-                            [
-                                'standards_id' => $record->id,
-                                'auditors_id' => Auth::id(),
-                                'prodis_id' => $data['prodis_id'],
-                            ],
-                            [
-                                'score' => $data['score'],
-                                'notes' => $data['notes'],
-                            ]
-                        );
+                        $hasBukti = Prodiattachment::where('standards_id', $record->id)
+                            ->where('prodis_id', $data['prodis_id'])->exists();
+                        if (!$hasBukti) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Prodi belum mengupload bukti untuk standar ini')
+                                ->send();
+                            return;
+                        }
 
-                        // Notify the prodi user that their submission was scored
+                        $keywords = array_filter(array_map('trim', explode(',', $record->keywords ?? '')));
+                        $hasMultiple = count($keywords) > 1;
+                        $lastScore = null;
+
+                        foreach ($data['items'] as $index => $item) {
+                            $lastScore = Auditscore::updateOrCreate(
+                                [
+                                    'standards_id'  => $record->id,
+                                    'auditors_id'   => Auth::id(),
+                                    'prodis_id'     => $data['prodis_id'],
+                                    'keyword_index' => $hasMultiple ? (int) $index : null,
+                                ],
+                                [
+                                    'score' => $item['score'],
+                                    'notes' => $item['notes'],
+                                ]
+                            );
+                        }
+
                         $prodiUser = Prodi::find($data['prodis_id'])?->user;
-                        if ($prodiUser) {
-                            $prodiUser->notify(new AuditScoreSavedNotification($auditScore));
+                        if ($prodiUser && $lastScore) {
+                            $prodiUser->notify(new AuditScoreSavedNotification($lastScore));
                         }
 
                         Notification::make()
@@ -510,15 +749,23 @@ class StandardsTable extends Page implements HasTable
                     ->icon('heroicon-o-exclamation-triangle')
                     ->color('danger')
                     ->iconButton()
-                    ->visible(fn () => $isAuditor && !$isLocked)
+                    ->visible(function ($record) use ($isAuditor) {
+                        return $isAuditor && $record->cycle?->is_active && !$record->cycle?->is_locked;
+                    })
                     ->form(function ($livewire) {
                         $filterValue = $livewire->tableFilters['prodi_id']['value'] ?? null;
                         $prodi = $filterValue ? Prodi::find($filterValue) : null;
 
+                        // Master KTS (template yang bisa dipakai berulang)
+                        $availableKts = Nonconformity::whereNull('standards_id')
+                            ->get(['id', 'kts', 'kategori'])
+                            ->mapWithKeys(fn ($nc) => [$nc->id => $nc->kts . ' (' . ($nc->kategori ?? '-') . ')']);
+
                         $fields = [
-                            Forms\Components\TextInput::make('kts')
-                                ->label('Kode KTS')
-                                ->placeholder('Contoh: KTS-001')
+                            Forms\Components\Select::make('nonconformity_id')
+                                ->label('Pilih KTS')
+                                ->options($availableKts)
+                                ->searchable()
                                 ->required(),
 
                             Forms\Components\Textarea::make('description')
@@ -561,8 +808,11 @@ class StandardsTable extends Page implements HasTable
                             return;
                         }
 
-                        Nonconformity::create([
-                            'kts'                => $data['kts'],
+                        // Buat KTS baru berdasarkan master (master tetap utuh)
+                        $master = Nonconformity::find($data['nonconformity_id']);
+                        $kts = Nonconformity::create([
+                            'kts'                => $master->kts,
+                            'kategori'           => $master->kategori,
                             'description'        => $data['description'],
                             'standards_id'       => $record->id,
                             'prodis_id'          => $data['prodis_id'],
@@ -571,10 +821,80 @@ class StandardsTable extends Page implements HasTable
                             'deadline_perbaikan' => $data['deadline_perbaikan'] ?? null,
                         ]);
 
+                        $prodiUser = Prodi::find($data['prodis_id'])?->user;
+                        if ($prodiUser) {
+                            $kts->load('standard');
+                            $prodiUser->notify(new KtsDibuatNotification($kts));
+                        }
+
                         Notification::make()
                             ->title('KTS berhasil dicatat')
                             ->success()
                             ->send();
+                    }),
+
+                Tables\Actions\Action::make('riwayat_nilai')
+                    ->label('Riwayat Nilai')
+                    ->icon('heroicon-o-clock')
+                    ->color('gray')
+                    ->iconButton()
+                    ->visible(fn ($record) => ($isAuditor || $isProdi || $isFakultas || $isAdmin) && $record->auditscore->isNotEmpty())
+                    ->modalHeading('Riwayat Perubahan Nilai')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalContent(function (Standard $record, $livewire) {
+                        $filterValue = $livewire->tableFilters['prodi_id']['value'] ?? null;
+                        $scoreIds = $record->auditscore
+                            ->when($filterValue, fn ($c) => $c->where('prodis_id', $filterValue))
+                            ->pluck('id');
+
+                        $activities = Activity::where('subject_type', Auditscore::class)
+                            ->whereIn('subject_id', $scoreIds)
+                            ->latest()
+                            ->limit(20)
+                            ->get();
+
+                        $scoreLabel = fn ($v) => match ((int) $v) {
+                            1 => '1 - Kurang',
+                            2 => '2 - Cukup',
+                            3 => '3 - Baik',
+                            4 => '4 - Sangat Baik',
+                            default => $v,
+                        };
+
+                        $html = '<div style="font-size:0.875rem;">';
+                        if ($activities->isEmpty()) {
+                            $html .= '<p style="color:#6b7280;">Belum ada riwayat perubahan.</p>';
+                        } else {
+                            foreach ($activities as $activity) {
+                                $causer = $activity->causer?->name ?? 'System';
+                                $date = $activity->created_at->format('d M Y H:i');
+                                $props = $activity->properties;
+
+                                $html .= '<div style="border-bottom:1px solid #e5e7eb;padding:8px 0;">';
+                                $html .= '<strong>' . e($causer) . '</strong> — <span style="color:#6b7280;">' . $date . '</span><br>';
+
+                                if ($activity->event === 'created') {
+                                    $score = $props['attributes']['score'] ?? null;
+                                    $html .= 'Nilai diberikan: <strong>' . $scoreLabel($score) . '</strong>';
+                                    $notes = $props['attributes']['notes'] ?? null;
+                                    if ($notes) $html .= '<br>Catatan: ' . e($notes);
+                                } elseif ($activity->event === 'updated') {
+                                    $old = $props['old'] ?? [];
+                                    $new = $props['attributes'] ?? [];
+                                    if (isset($old['score'], $new['score'])) {
+                                        $html .= 'Nilai diubah: ' . $scoreLabel($old['score']) . ' → <strong>' . $scoreLabel($new['score']) . '</strong>';
+                                    }
+                                    if (array_key_exists('notes', $old)) {
+                                        $html .= '<br>Catatan: ' . e($old['notes'] ?: '-') . ' → <strong>' . e($new['notes'] ?: '-') . '</strong>';
+                                    }
+                                }
+                                $html .= '</div>';
+                            }
+                        }
+                        $html .= '</div>';
+
+                        return new \Illuminate\Support\HtmlString($html);
                     }),
             ])
             ->bulkActions([]);

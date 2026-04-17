@@ -37,6 +37,8 @@ class CycleResource extends Resource
                 Forms\Components\DatePicker::make('end_date')
                     ->required(),
                 Forms\Components\Toggle::make('is_active')
+                    ->label('Aktif')
+                    ->helperText('Hanya satu siklus yang bisa aktif. Mengaktifkan siklus ini akan menonaktifkan siklus lain secara otomatis.')
                     ->required(),
                 Forms\Components\Toggle::make('is_locked')
                     ->label('Kunci Siklus')
@@ -102,7 +104,8 @@ class CycleResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('year', 'desc');
     }
 
     public static function getRelations(): array

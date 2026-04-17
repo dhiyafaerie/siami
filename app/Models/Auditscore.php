@@ -13,6 +13,10 @@ class Auditscore extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'score' => 'integer',
+    ];
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -39,10 +43,10 @@ class Auditscore extends Model
     public function getScoreTextAttribute()
     {
         return match($this->score) {
-            1 => 'Kurang Cukup',
-            2 => 'Kurang',
-            3 => 'Cukup',
-            4 => 'Sangat Cukup',
+            1 => 'Kurang',
+            2 => 'Cukup',
+            3 => 'Baik',
+            4 => 'Sangat Baik',
             default => 'Belum Dinilai'
         };
     }

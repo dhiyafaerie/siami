@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Auditscore;
+use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -20,19 +21,20 @@ class AuditScoreSavedNotification extends Notification
     public function toDatabase(object $notifiable): array
     {
         $scoreText = match ($this->auditScore->score) {
-            1 => 'Kurang Cukup',
-            2 => 'Kurang',
-            3 => 'Cukup',
-            4 => 'Sangat Cukup',
+            1 => 'Kurang',
+            2 => 'Cukup',
+            3 => 'Baik',
+            4 => 'Sangat Baik',
             default => 'N/A',
         };
 
         $standardNomor = $this->auditScore->standard?->nomor ?? '-';
 
-        return [
-            'message' => "Nilai audit untuk Standar {$standardNomor} telah diberikan: {$scoreText}.",
-            'standards_id' => $this->auditScore->standards_id,
-            'score' => $this->auditScore->score,
-        ];
+        return FilamentNotification::make()
+            ->title('Nilai Audit Diberikan')
+            ->body("Nilai untuk Standar {$standardNomor}: {$scoreText}.")
+            ->icon('heroicon-o-clipboard-document-check')
+            ->iconColor('success')
+            ->getDatabaseMessage();
     }
 }

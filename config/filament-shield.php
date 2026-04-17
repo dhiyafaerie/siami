@@ -70,6 +70,8 @@ return [
 
         'pages' => [
             'Dashboard',
+            'AuditorKts',
+            'ProdiKts',
         ],
 
         'widgets' => [

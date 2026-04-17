@@ -8,8 +8,16 @@ use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
 class FakultasRekapExport implements WithMultipleSheets
 {
+    public function __construct(protected ?int $facultyId = null, protected ?int $prodiId = null)
+    {
+    }
+
     public function sheets(): array
     {
-        return Faculty::all()->map(fn ($faculty) => new FakultasSheet($faculty))->toArray();
+        $query = $this->facultyId
+            ? Faculty::where('id', $this->facultyId)
+            : Faculty::query();
+
+        return $query->get()->map(fn ($faculty) => new FakultasSheet($faculty, $this->prodiId))->toArray();
     }
 }
