@@ -21,3 +21,17 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/.claude
+
+# Thesis / proposal / accreditation drafts — local only, not web module
+/Skripsi_SIAMI*.docx
+/Skripsi_*.md
+/generate_skripsi.py
+/Proposal_TA_SIAMI*.docx
+/Proposal_TA_SIAMI*.md
+/SUSUNAN*.pdf
+/KOMPILASI*.pdf
+/borang-*.txt
+/build_proposal_docx.py
+/generate_proposal.py
+/v2_tables_dump.json

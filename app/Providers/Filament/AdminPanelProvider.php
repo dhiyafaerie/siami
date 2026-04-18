@@ -59,6 +59,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->navigationGroups([
                 'AMI',
+                'Berkas',
                 'Laporan',
                 'User Management',
             ])
