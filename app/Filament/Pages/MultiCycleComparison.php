@@ -7,6 +7,7 @@ use App\Models\Cycle;
 use App\Models\Prodi;
 use Filament\Pages\Page;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Illuminate\Support\Facades\DB;
 
 class MultiCycleComparison extends Page
 {
@@ -22,29 +23,31 @@ class MultiCycleComparison extends Page
     {
         $cycles = Cycle::orderBy('year')->orderBy('id')->get();
 
-        $scores = Auditscore::with(['prodi', 'standard.cycle'])->get();
+        $averages = Auditscore::query()
+            ->join('standards', 'auditscores.standards_id', '=', 'standards.id')
+            ->select('auditscores.prodis_id', 'standards.cycles_id', DB::raw('AVG(auditscores.score) as avg_score'))
+            ->groupBy('auditscores.prodis_id', 'standards.cycles_id')
+            ->get()
+            ->groupBy('prodis_id');
 
-        $grouped = $scores->groupBy('prodis_id');
+        $rows = Prodi::orderBy('programstudi')->get()->map(function (Prodi $prodi) use ($averages, $cycles) {
+            $byCycle = $averages->get($prodi->id, collect())->keyBy('cycles_id');
 
-        $rows = Prodi::all()->map(function (Prodi $prodi) use ($grouped, $cycles) {
-            $prodiScores = $grouped->get($prodi->id, collect());
-
-            $cycleAverages = $cycles->mapWithKeys(function (Cycle $cycle) use ($prodiScores) {
-                $avg = $prodiScores
-                    ->filter(fn ($s) => $s->standard?->cycles_id === $cycle->id)
-                    ->avg('score');
-                return [$cycle->id => $avg ? round($avg, 2) : null];
-            });
+            $cycleAverages = $cycles->mapWithKeys(fn (Cycle $cycle) => [
+                $cycle->id => isset($byCycle[$cycle->id])
+                    ? round((float) $byCycle[$cycle->id]->avg_score, 2)
+                    : null,
+            ]);
 
             return [
-                'prodi' => $prodi,
+                'prodi'  => $prodi,
                 'scores' => $cycleAverages,
             ];
         });
 
         return [
             'cycles' => $cycles,
-            'rows' => $rows,
+            'rows'   => $rows,
         ];
     }
 }

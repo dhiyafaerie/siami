@@ -33,32 +33,30 @@ class KtsOverdueChart extends BarChartWidget
         if ($scopedProdi !== null) {
             $prodiQuery->whereIn('id', $scopedProdi);
         }
-        $prodis = $prodiQuery->get();
+        $prodis = $prodiQuery->get(['id', 'programstudi']);
 
-        $today = now()->toDateString();
+        $today       = now()->toDateString();
+        $prodiIds    = $prodis->pluck('id');
 
-        $rows = $prodis->map(function (Prodi $prodi) use ($standardIds, $today) {
-            $base = Nonconformity::where('prodis_id', $prodi->id)
-                ->whereIn('standards_id', $standardIds);
+        $openKts = Nonconformity::whereIn('prodis_id', $prodiIds)
+            ->whereIn('standards_id', $standardIds)
+            ->where('status', '!=', Nonconformity::STATUS_DITUTUP)
+            ->selectRaw(
+                'prodis_id,
+                 SUM(CASE WHEN deadline_perbaikan IS NOT NULL AND DATE(deadline_perbaikan) < ? THEN 1 ELSE 0 END) as overdue,
+                 SUM(CASE WHEN deadline_perbaikan IS NULL OR DATE(deadline_perbaikan) >= ? THEN 1 ELSE 0 END) as aktif',
+                [$today, $today]
+            )
+            ->groupBy('prodis_id')
+            ->get()
+            ->keyBy('prodis_id');
 
-            $overdue = (clone $base)
-                ->where('status', '!=', Nonconformity::STATUS_DITUTUP)
-                ->whereNotNull('deadline_perbaikan')
-                ->whereDate('deadline_perbaikan', '<', $today)
-                ->count();
-
-            $aktif = (clone $base)
-                ->where('status', '!=', Nonconformity::STATUS_DITUTUP)
-                ->where(function ($q) use ($today) {
-                    $q->whereNull('deadline_perbaikan')
-                      ->orWhereDate('deadline_perbaikan', '>=', $today);
-                })
-                ->count();
-
+        $rows = $prodis->map(function (Prodi $prodi) use ($openKts) {
+            $row = $openKts->get($prodi->id);
             return [
                 'label'   => $prodi->programstudi,
-                'overdue' => $overdue,
-                'aktif'   => $aktif,
+                'overdue' => (int) ($row->overdue ?? 0),
+                'aktif'   => (int) ($row->aktif ?? 0),
             ];
         })->sortByDesc('overdue')->values();
 

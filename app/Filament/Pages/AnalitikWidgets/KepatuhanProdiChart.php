@@ -34,22 +34,22 @@ class KepatuhanProdiChart extends BarChartWidget
         if ($scopedProdi !== null) {
             $prodiQuery->whereIn('id', $scopedProdi);
         }
-        $prodis = $prodiQuery->get();
+        $prodis = $prodiQuery->get(['id', 'programstudi']);
 
-        $rows = $prodis->map(function (Prodi $prodi) use ($standardIds) {
-            $perStandard = Auditscore::where('prodis_id', $prodi->id)
-                ->whereIn('standards_id', $standardIds)
-                ->select('standards_id', DB::raw('AVG(score) as avg_score'))
-                ->groupBy('standards_id')
-                ->get();
+        $perProdiStandard = Auditscore::whereIn('standards_id', $standardIds)
+            ->whereIn('prodis_id', $prodis->pluck('id'))
+            ->select('prodis_id', 'standards_id', DB::raw('AVG(score) as avg_score'))
+            ->groupBy('prodis_id', 'standards_id')
+            ->get()
+            ->groupBy('prodis_id');
 
+        $rows = $prodis->map(function (Prodi $prodi) use ($perProdiStandard) {
+            $perStandard = $perProdiStandard->get($prodi->id, collect());
             $total = $perStandard->count();
             if ($total === 0) {
                 return ['label' => $prodi->programstudi, 'percent' => 0.0];
             }
-
             $compliant = $perStandard->filter(fn ($r) => (float) $r->avg_score >= 3)->count();
-
             return [
                 'label'   => $prodi->programstudi,
                 'percent' => round($compliant / $total * 100, 1),
