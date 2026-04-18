@@ -18,7 +18,7 @@ class KelengkapanProdiChart extends BarChartWidget
 
     protected function getData(): array
     {
-        $cycle = Cycle::where('is_active', true)->first();
+        $cycle = Cycle::getActive();
         if (! $cycle) {
             return ['datasets' => [], 'labels' => []];
         }

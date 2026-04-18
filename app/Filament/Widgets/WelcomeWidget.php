@@ -16,7 +16,7 @@ class WelcomeWidget extends Widget
     {
         $user = Auth::user();
         $user->loadMissing('prodi', 'roles');
-        $activeCycle = Cycle::where('is_active', true)->first();
+        $activeCycle = Cycle::getActive();
 
         $role = match (true) {
             $user->hasRole('super_admin') => 'Super Admin',

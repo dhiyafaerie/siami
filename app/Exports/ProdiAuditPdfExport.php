@@ -15,7 +15,7 @@ class ProdiAuditPdfExport
         protected Prodi $prodi,
         protected ?Cycle $cycle = null,
     ) {
-        $this->cycle ??= Cycle::where('is_active', true)->first();
+        $this->cycle ??= Cycle::getActive();
     }
 
     public function download(): Response

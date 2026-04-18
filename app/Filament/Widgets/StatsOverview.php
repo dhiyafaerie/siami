@@ -26,7 +26,7 @@ class StatsOverview extends BaseWidget
         // Prodi user
         if ($user->prodi->isNotEmpty()) {
             $currentProdiId = $user->prodi->first()->id;
-            $activeCycle = Cycle::where('is_active', true)->first();
+            $activeCycle = Cycle::getActive();
             $activeCycleStandardIds = $activeCycle
                 ? Standard::where('cycles_id', $activeCycle->id)->pluck('id')
                 : collect();
@@ -69,7 +69,7 @@ class StatsOverview extends BaseWidget
         // Auditor user
         if ($user->hasRole('auditor')) {
             $prodiDitugaskan = Auditor::where('users_id', $user->id)->count();
-            $activeCycle = Cycle::where('is_active', true)->first();
+            $activeCycle = Cycle::getActive();
             $activeCycleStandardIds = $activeCycle
                 ? Standard::where('cycles_id', $activeCycle->id)->pluck('id')
                 : collect();
@@ -108,7 +108,7 @@ class StatsOverview extends BaseWidget
         }
 
         // Admin / super_admin
-        $activeCycle = Cycle::where('is_active', true)->first();
+        $activeCycle = Cycle::getActive();
         $activeCycleStandardIds = $activeCycle
             ? Standard::where('cycles_id', $activeCycle->id)->pluck('id')
             : collect();

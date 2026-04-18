@@ -149,7 +149,7 @@ class StandardsTable extends Page implements HasTable
                         ->required(),
                 ])
                 ->action(function (array $data) {
-                    $cycle = Cycle::where('is_active', true)->first();
+                    $cycle = Cycle::getActive();
                     $url = route('pdf.prodi', ['prodi' => $data['prodis_id'], 'cycle' => $cycle?->id]);
                     $this->redirect($url, navigate: false);
                 }),
@@ -159,7 +159,7 @@ class StandardsTable extends Page implements HasTable
                 ->icon('heroicon-o-document-arrow-down')
                 ->visible($isProdi && !$isAdmin && !$isAuditor && !$isFakultas)
                 ->action(function () use ($userProdi) {
-                    $cycle = Cycle::where('is_active', true)->first();
+                    $cycle = Cycle::getActive();
                     $url = route('pdf.prodi', ['prodi' => $userProdi->id, 'cycle' => $cycle?->id]);
                     $this->redirect($url, navigate: false);
                 }),
@@ -173,7 +173,7 @@ class StandardsTable extends Page implements HasTable
                     Forms\Components\Select::make('cycles_id')
                         ->label('Siklus')
                         ->options(Cycle::orderByDesc('year')->pluck('name', 'id'))
-                        ->default(fn () => Cycle::where('is_active', true)->first()?->id)
+                        ->default(fn () => Cycle::getActive()?->id)
                         ->required(),
 
                     Forms\Components\Select::make('prodis_id')
@@ -199,7 +199,7 @@ class StandardsTable extends Page implements HasTable
                     Forms\Components\Select::make('cycles_id')
                         ->label('Siklus')
                         ->options(Cycle::orderByDesc('year')->pluck('name', 'id'))
-                        ->default(fn () => Cycle::where('is_active', true)->first()?->id)
+                        ->default(fn () => Cycle::getActive()?->id)
                         ->required(),
                 ])
                 ->action(function (array $data) use ($userProdi) {
@@ -227,7 +227,7 @@ class StandardsTable extends Page implements HasTable
             ? Prodi::where('faculties_id', $user->faculty->id)->pluck('id')
             : null;
 
-        $activeCycle = Cycle::where('is_active', true)->first();
+        $activeCycle = Cycle::getActive();
 
         return $table
             ->query(function () use ($isProdi, $currentProdiId, $isAuditor, $isFakultas, $fakultasProdiIds) {
@@ -897,7 +897,9 @@ class StandardsTable extends Page implements HasTable
                         return new \Illuminate\Support\HtmlString($html);
                     }),
             ])
-            ->bulkActions([]);
+            ->bulkActions([])
+            ->paginated([10, 25, 50])
+            ->defaultPaginationPageOption(10);
 
     }
 }

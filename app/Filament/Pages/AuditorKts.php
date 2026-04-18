@@ -101,7 +101,7 @@ class AuditorKts extends Page implements HasTable
                 Tables\Filters\SelectFilter::make('cycles_id')
                     ->label('Siklus')
                     ->options(Cycle::orderByDesc('year')->pluck('name', 'id'))
-                    ->default(Cycle::where('is_active', true)->value('id'))
+                    ->default(Cycle::getActive()?->id)
                     ->placeholder('Pilih Siklus')
                     ->query(function (Builder $query, array $data) {
                         if (!empty($data['value'])) {

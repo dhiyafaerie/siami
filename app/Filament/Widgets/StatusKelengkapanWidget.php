@@ -27,7 +27,7 @@ class StatusKelengkapanWidget extends BaseWidget
         $user = Auth::user();
         $user->loadMissing('prodi');
         $currentProdiId = $user->prodi->first()?->id;
-        $activeCycleId = Cycle::where('is_active', true)->value('id');
+        $activeCycleId = Cycle::getActive()?->id;
 
         return $table
             ->query(

@@ -102,7 +102,7 @@ class StandardResource extends Resource
                 Tables\Filters\SelectFilter::make('cycles_id')
                     ->label('Siklus')
                     ->options(Cycle::orderByDesc('year')->pluck('name', 'id'))
-                    ->default(Cycle::where('is_active', true)->value('id'))
+                    ->default(Cycle::getActive()?->id)
                     ->placeholder('Semua Siklus'),
             ])
             ->actions([

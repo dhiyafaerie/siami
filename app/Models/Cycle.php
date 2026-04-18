@@ -5,10 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class Cycle extends Model
 {
     use HasFactory;
+
+    public const ACTIVE_CACHE_KEY = 'cycle.active';
 
     protected $guarded = [];
 
@@ -26,6 +29,18 @@ class Cycle extends Model
                     ->update(['is_active' => false]);
             }
         });
+
+        static::saved(fn () => Cache::forget(self::ACTIVE_CACHE_KEY));
+        static::deleted(fn () => Cache::forget(self::ACTIVE_CACHE_KEY));
+    }
+
+    public static function getActive(): ?self
+    {
+        return Cache::remember(
+            self::ACTIVE_CACHE_KEY,
+            now()->addMinutes(5),
+            fn () => static::where('is_active', true)->first()
+        );
     }
 
     public function isLocked(): bool
