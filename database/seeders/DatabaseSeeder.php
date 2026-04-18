@@ -2,27 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
         $this->call([
-        RolePermissionSeeder::class,
-        // Other seeders...
+            DataSeeder::class,
         ]);
 
-        User::factory()->create([
-            'name' => 'Ketua LPM',
-            'email' => 'lpm@gmail.com',
-            'password' => bcrypt('123456'),
-        ]);
+        $this->command->call('filament:clear-cached-components');
+        $this->command->call('icon:cache');
     }
 }
