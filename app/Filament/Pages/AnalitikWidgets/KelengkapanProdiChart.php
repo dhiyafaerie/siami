@@ -23,7 +23,8 @@ class KelengkapanProdiChart extends BarChartWidget
             return ['datasets' => [], 'labels' => []];
         }
 
-        $totalStandar = Standard::where('cycles_id', $cycle->id)->count();
+        $standardIds  = Standard::where('cycles_id', $cycle->id)->pluck('id');
+        $totalStandar = $standardIds->count();
         if ($totalStandar === 0) {
             return ['datasets' => [], 'labels' => []];
         }
@@ -33,21 +34,18 @@ class KelengkapanProdiChart extends BarChartWidget
         if ($scopedProdi !== null) {
             $prodiQuery->whereIn('id', $scopedProdi);
         }
-        $prodis = $prodiQuery->get();
+        $prodis = $prodiQuery->get(['id', 'programstudi']);
 
-        $standardIds = Standard::where('cycles_id', $cycle->id)->pluck('id');
+        $uploadedCounts = Prodiattachment::whereIn('standards_id', $standardIds)
+            ->whereIn('prodis_id', $prodis->pluck('id'))
+            ->selectRaw('prodis_id, COUNT(DISTINCT standards_id) as total')
+            ->groupBy('prodis_id')
+            ->pluck('total', 'prodis_id');
 
-        $rows = $prodis->map(function (Prodi $prodi) use ($standardIds, $totalStandar) {
-            $uploaded = Prodiattachment::where('prodis_id', $prodi->id)
-                ->whereIn('standards_id', $standardIds)
-                ->distinct('standards_id')
-                ->count('standards_id');
-
-            return [
-                'label'   => $prodi->programstudi,
-                'percent' => round(($uploaded / $totalStandar) * 100, 1),
-            ];
-        })->sortByDesc('percent')->values();
+        $rows = $prodis->map(fn (Prodi $prodi) => [
+            'label'   => $prodi->programstudi,
+            'percent' => round((((int) ($uploadedCounts[$prodi->id] ?? 0)) / $totalStandar) * 100, 1),
+        ])->sortByDesc('percent')->values();
 
         return [
             'datasets' => [
